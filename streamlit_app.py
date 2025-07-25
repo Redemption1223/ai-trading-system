@@ -1,11 +1,9 @@
 import streamlit as st
 import requests
 import pandas as pd
-import plotly.graph_objects as go
-import plotly.express as px
-from datetime import datetime, timedelta
 import time
 import json
+from datetime import datetime
 
 # Configure page
 st.set_page_config(
@@ -24,13 +22,6 @@ st.markdown("""
         text-align: center;
         margin-bottom: 2rem;
     }
-    .metric-card {
-        background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
-        padding: 1rem;
-        border-radius: 10px;
-        color: white;
-        text-align: center;
-    }
     .status-connected {
         background-color: #10b981;
         color: white;
@@ -45,16 +36,34 @@ st.markdown("""
         border-radius: 20px;
         font-weight: bold;
     }
+    .prediction-box {
+        padding: 10px;
+        border-radius: 5px;
+        margin: 5px 0;
+        font-weight: bold;
+    }
+    .buy-signal {
+        background-color: #10b981;
+        color: white;
+    }
+    .sell-signal {
+        background-color: #ef4444;
+        color: white;
+    }
+    .hold-signal {
+        background-color: #f59e0b;
+        color: white;
+    }
 </style>
 """, unsafe_allow_html=True)
 
 # Configuration
-API_URL = st.secrets.get("API_URL", "http://localhost:8000")
+API_URL = st.secrets.get("API_URL", "https://ai-trading-system-production.up.railway.app")
 
 def fetch_data(endpoint, default=None):
     """Fetch data from API with error handling"""
     try:
-        response = requests.get(f"{API_URL}/{endpoint}", timeout=5)
+        response = requests.get(f"{API_URL}/{endpoint}", timeout=10)
         if response.status_code == 200:
             return response.json()
         else:
@@ -69,7 +78,20 @@ def fetch_data(endpoint, default=None):
 
 def format_currency(value):
     """Format currency values"""
-    return f"${value:,.2f}" if isinstance(value, (int, float)) else "$0.00"
+    try:
+        return f"${float(value):,.2f}" if value else "$0.00"
+    except:
+        return "$0.00"
+
+def create_simple_chart(market_data):
+    """Create a simple line chart"""
+    if not market_data:
+        return None
+    
+    df = pd.DataFrame(market_data)
+    if 'price' in df.columns:
+        return st.line_chart(df.set_index('timestamp')['price'])
+    return None
 
 def main():
     # Header
@@ -78,28 +100,23 @@ def main():
     # Connection status
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        system_status = fetch_data("system-status", {})
-        is_connected = system_status.get("market_data_count", 0) > 0
-        
-        if is_connected:
-            st.markdown('<div class="status-connected">🟢 MT5 Connected & Active</div>', unsafe_allow_html=True)
-        else:
-            st.markdown('<div class="status-disconnected">🔴 Waiting for MT5 Connection</div>', unsafe_allow_html=True)
+        try:
+            system_status = fetch_data("system-status", {})
+            is_connected = system_status.get("market_data_count", 0) > 0
+            
+            if is_connected:
+                st.markdown('<div class="status-connected">🟢 MT5 Connected & Active</div>', unsafe_allow_html=True)
+            else:
+                st.markdown('<div class="status-disconnected">🔴 Waiting for MT5 Connection</div>', unsafe_allow_html=True)
+        except:
+            st.markdown('<div class="status-disconnected">🔴 API Connection Error</div>', unsafe_allow_html=True)
     
     st.markdown("---")
     
-    # Auto-refresh setup
-    if 'refresh_counter' not in st.session_state:
-        st.session_state.refresh_counter = 0
+    # Account metrics
+    st.subheader("📊 Account Overview")
     
-    # Create containers for real-time updates
-    metrics_container = st.container()
-    main_content_container = st.container()
-    
-    with metrics_container:
-        # Account metrics
-        st.subheader("📊 Account Overview")
-        
+    try:
         account_info = fetch_data("account-info", {})
         
         col1, col2, col3, col4 = st.columns(4)
@@ -118,57 +135,43 @@ def main():
             st.metric("💵 Profit/Loss", format_currency(profit), delta=delta)
         
         with col4:
-            ai_status = "🟢 Active" if system_status.get("ai_trained", False) else "🟡 Learning"
+            ai_status = "🟢 Active" if system_status.get("ai_active", False) else "🟡 Learning"
             st.metric("🤖 AI Status", ai_status)
+    except Exception as e:
+        st.error(f"Error loading account info: {e}")
     
-    with main_content_container:
-        # Main dashboard
-        col1, col2 = st.columns([2, 1])
+    # Main dashboard
+    col1, col2 = st.columns([2, 1])
+    
+    with col1:
+        st.subheader("📈 Real-time Price Chart")
         
-        with col1:
-            st.subheader("📈 Real-time Price Chart")
-            
+        try:
             market_data = fetch_data("market-data", [])
             
             if market_data and len(market_data) > 0:
-                # Convert to DataFrame
+                # Convert to DataFrame for display
                 df = pd.DataFrame(market_data)
-                df['timestamp'] = pd.to_datetime(df['timestamp'])
-                
-                # Create price chart
-                fig = go.Figure()
-                
-                fig.add_trace(go.Scatter(
-                    x=df['timestamp'],
-                    y=df['price'],
-                    mode='lines+markers',
-                    name='Price',
-                    line=dict(color='#00ff88', width=2),
-                    marker=dict(size=4)
-                ))
-                
-                fig.update_layout(
-                    title=f"{df.iloc[-1]['symbol'] if not df.empty else 'EURUSD'} - Live Price",
-                    xaxis_title="Time",
-                    yaxis_title="Price",
-                    template="plotly_dark",
-                    height=400,
-                    showlegend=True
-                )
-                
-                st.plotly_chart(fig, use_container_width=True)
                 
                 # Show latest price info
                 if not df.empty:
                     latest = df.iloc[-1]
                     col_a, col_b, col_c = st.columns(3)
                     with col_a:
-                        st.metric("Current Price", f"{latest['price']:.5f}")
+                        st.metric("Current Price", f"{latest.get('price', 0):.5f}")
                     with col_b:
-                        st.metric("Volume", f"{latest['volume']:,}")
+                        st.metric("Volume", f"{latest.get('volume', 0):,}")
                     with col_c:
-                        price_change = df['price'].pct_change().iloc[-1] * 100
-                        st.metric("Change %", f"{price_change:.3f}%")
+                        if len(df) > 1:
+                            price_change = ((latest.get('price', 0) - df.iloc[-2].get('price', 0)) / df.iloc[-2].get('price', 1)) * 100
+                            st.metric("Change %", f"{price_change:.3f}%")
+                
+                # Simple line chart
+                if 'price' in df.columns and len(df) > 1:
+                    st.line_chart(df['price'])
+                else:
+                    st.info("📊 Building chart with incoming data...")
+                    
             else:
                 st.info("📡 Waiting for market data from MT5...")
                 st.markdown("""
@@ -178,45 +181,43 @@ def main():
                 3. Attach EA to any chart
                 4. Data will appear here automatically
                 """)
+        except Exception as e:
+            st.error(f"Error loading market data: {e}")
+    
+    with col2:
+        # AI Predictions
+        st.subheader("🧠 AI Predictions")
         
-        with col2:
-            # AI Predictions
-            st.subheader("🧠 AI Predictions")
-            
+        try:
             predictions = fetch_data("ai-predictions", [])
             
             if predictions:
-                for i, pred in enumerate(predictions[-5:]):
+                for pred in predictions[-5:]:
                     prediction_data = pred.get('prediction', {})
                     action = prediction_data.get('action', 'HOLD')
                     confidence = prediction_data.get('confidence', 0.5)
                     reasoning = prediction_data.get('reasoning', 'No reasoning')
                     
-                    # Color coding
-                    if action == "BUY":
-                        color = "🟢"
-                        bg_color = "#10b981"
-                    elif action == "SELL":
-                        color = "🔴"
-                        bg_color = "#ef4444"
-                    else:
-                        color = "🟡"
-                        bg_color = "#f59e0b"
+                    # Create prediction box
+                    css_class = f"{action.lower()}-signal"
+                    emoji = "🟢" if action == "BUY" else "🔴" if action == "SELL" else "🟡"
                     
-                    with st.container():
-                        st.markdown(f"""
-                        <div style="background-color: {bg_color}; padding: 10px; border-radius: 5px; margin: 5px 0;">
-                            <strong>{color} {action}</strong><br>
-                            Confidence: {confidence:.1%}<br>
-                            <small>{reasoning}</small>
-                        </div>
-                        """, unsafe_allow_html=True)
+                    st.markdown(f"""
+                    <div class="prediction-box {css_class}">
+                        {emoji} <strong>{action}</strong><br>
+                        Confidence: {confidence:.1%}<br>
+                        <small>{reasoning}</small>
+                    </div>
+                    """, unsafe_allow_html=True)
             else:
                 st.info("🤖 AI is analyzing market data...")
-            
-            # Market News
-            st.subheader("📰 Market News")
-            
+        except Exception as e:
+            st.error(f"Error loading predictions: {e}")
+        
+        # Market News
+        st.subheader("📰 Market News")
+        
+        try:
             news = fetch_data("news", [])
             
             for article in news[:3]:
@@ -226,11 +227,14 @@ def main():
                     if article.get('sentiment'):
                         sentiment_color = "🟢" if article['sentiment'] == "bullish" else "🔴" if article['sentiment'] == "bearish" else "🟡"
                         st.write(f"**Sentiment:** {sentiment_color} {article['sentiment'].title()}")
-        
-        # System Information
-        st.markdown("---")
-        st.subheader("⚙️ System Information")
-        
+        except Exception as e:
+            st.error(f"Error loading news: {e}")
+    
+    # System Information
+    st.markdown("---")
+    st.subheader("⚙️ System Information")
+    
+    try:
         info_col1, info_col2, info_col3 = st.columns(3)
         
         with info_col1:
@@ -248,21 +252,40 @@ def main():
                 except:
                     pass
             st.info(f"**Last Update:** {last_update}")
-        
-        # Risk Management
-        st.subheader("🛡️ Risk Management")
-        risk_col1, risk_col2, risk_col3 = st.columns(3)
-        
-        with risk_col1:
-            st.metric("Max Drawdown", "5%", help="Maximum allowed account drawdown")
-        with risk_col2:
-            st.metric("Position Size", "Auto", help="AI-calculated position sizing")
-        with risk_col3:
-            st.metric("Daily Risk", "2%", help="Maximum daily risk exposure")
+    except Exception as e:
+        st.error(f"Error loading system info: {e}")
     
-    # Auto-refresh every 5 seconds
-    time.sleep(5)
-    st.session_state.refresh_counter += 1
+    # Risk Management
+    st.subheader("🛡️ Risk Management")
+    risk_col1, risk_col2, risk_col3 = st.columns(3)
+    
+    with risk_col1:
+        st.metric("Max Drawdown", "5%", help="Maximum allowed account drawdown")
+    with risk_col2:
+        st.metric("Position Size", "Auto", help="AI-calculated position sizing")
+    with risk_col3:
+        st.metric("Daily Risk", "2%", help="Maximum daily risk exposure")
+    
+    # Footer
+    st.markdown("---")
+    st.markdown("""
+    <div style="text-align: center; color: #666;">
+        <p>🤖 AI Trading System • Real-time ML Processing • Secure MT5 Integration</p>
+        <p>Last refresh: {}</p>
+    </div>
+    """.format(datetime.now().strftime('%H:%M:%S')), unsafe_allow_html=True)
+
+# Auto-refresh
+if st.button("🔄 Refresh Data"):
+    st.rerun()
+
+# Auto-refresh every 30 seconds
+if 'last_refresh' not in st.session_state:
+    st.session_state.last_refresh = time.time()
+
+# Auto refresh every 30 seconds
+if time.time() - st.session_state.last_refresh > 30:
+    st.session_state.last_refresh = time.time()
     st.rerun()
 
 if __name__ == "__main__":
