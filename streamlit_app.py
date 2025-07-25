@@ -251,7 +251,7 @@ const AdvancedTradingDashboard = () => {
             <Brain className="w-8 h-8 text-purple-500" />
             <div>
               <h1 className="text-3xl font-bold">Advanced AI Trading System</h1>
-              <p className="text-gray-400">Neural Network • Multi-Currency • Auto-Trading</p>
+              <p className="text-gray-400">Neural Network | Multi-Currency | Auto-Trading</p>
             </div>
           </div>
           
