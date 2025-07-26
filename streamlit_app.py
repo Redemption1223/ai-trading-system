@@ -1,552 +1,263 @@
-import React, { useState, useEffect } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, BarChart, Bar } from 'recharts';
-import { TrendingUp, TrendingDown, Brain, Shield, DollarSign, Activity, Settings, AlertTriangle, CheckCircle, Clock, BarChart3, Zap, Globe, Play, Pause, Target } from 'lucide-react';
+import streamlit as st
+import requests
+import pandas as pd
+import time
+import json
+from datetime import datetime
+import plotly.graph_objects as go
+import plotly.express as px
 
-const AdvancedTradingDashboard = () => {
-  const [marketData, setMarketData] = useState({});
-  const [predictions, setPredictions] = useState({});
-  const [tradingSignals, setTradingSignals] = useState([]);
-  const [patternAnalysis, setPatternAnalysis] = useState({});
-  const [accountInfo, setAccountInfo] = useState({});
-  const [systemStatus, setSystemStatus] = useState({});
-  const [autoTradingEnabled, setAutoTradingEnabled] = useState(false);
-  const [selectedPair, setSelectedPair] = useState('EURUSD');
-  const [selectedTimeframe, setSelectedTimeframe] = useState('ALL');
+# Configure page
+st.set_page_config(
+    page_title="Advanced AI Trading Dashboard", 
+    layout="wide",
+    initial_sidebar_state="collapsed"
+)
 
-  const MAJOR_PAIRS = ['EURUSD', 'GBPUSD', 'USDJPY', 'USDCHF', 'AUDUSD', 'USDCAD'];
-  const MINOR_PAIRS = ['NZDUSD', 'EURJPY', 'GBPJPY', 'EURGBP', 'AUDCAD', 'AUDCHF'];
-  const EXOTIC_PAIRS = ['AUDJPY', 'AUDNZD', 'CADCHF', 'CADJPY', 'CHFJPY', 'EURAUD'];
+# API URL
+API_URL = st.secrets.get("API_URL", "https://ai-trading-system-production.up.railway.app")
 
-  const API_URL = "https://ai-trading-system-production.up.railway.app";
+# Forex pairs
+MAJOR_PAIRS = ['EURUSD', 'GBPUSD', 'USDJPY', 'USDCHF', 'AUDUSD', 'USDCAD']
+MINOR_PAIRS = ['NZDUSD', 'EURJPY', 'GBPJPY', 'EURGBP', 'AUDCAD', 'AUDCHF']
+ALL_PAIRS = MAJOR_PAIRS + MINOR_PAIRS
 
-  const fetchData = async (endpoint) => {
-    try {
-      const response = await fetch(`${API_URL}/${endpoint}`);
-      return response.ok ? await response.json() : null;
-    } catch (error) {
-      console.error(`Error fetching ${endpoint}:`, error);
-      return null;
-    }
-  };
+def fetch_data(endpoint):
+    """Fetch data from API"""
+    try:
+        response = requests.get(f"{API_URL}/{endpoint}", timeout=10)
+        return response.json() if response.status_code == 200 else {}
+    except:
+        return {}
 
-  useEffect(() => {
-    const fetchAllData = async () => {
-      const [market, pred, signals, patterns, account, status] = await Promise.all([
-        fetchData('market-data'),
-        fetchData('ai-predictions'),
-        fetchData('trading-signals'),
-        fetchData('pattern-analysis'),
-        fetchData('account-info'),
-        fetchData('system-status')
-      ]);
+def format_currency(value):
+    """Format currency values"""
+    try:
+        return f"${float(value):,.2f}" if value else "$0.00"
+    except:
+        return "$0.00"
 
-      if (market) setMarketData(market);
-      if (pred) setPredictions(pred);
-      if (signals) setTradingSignals(signals);
-      if (patterns) setPatternAnalysis(patterns);
-      if (account) setAccountInfo(account);
-      if (status) {
-        setSystemStatus(status);
-        setAutoTradingEnabled(status.auto_trading_enabled || false);
-      }
-    };
+def format_price(value, symbol):
+    """Format price based on symbol"""
+    try:
+        decimals = 3 if 'JPY' in symbol else 5
+        return f"{float(value):.{decimals}f}"
+    except:
+        return "0.00000"
 
-    fetchAllData();
-    const interval = setInterval(fetchAllData, 5000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const toggleAutoTrading = async () => {
-    try {
-      const response = await fetch(`${API_URL}/toggle-auto-trading`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ enabled: !autoTradingEnabled })
-      });
-      
-      if (response.ok) {
-        const result = await response.json();
-        setAutoTradingEnabled(result.auto_trading_enabled);
-      }
-    } catch (error) {
-      console.error('Error toggling auto-trading:', error);
-    }
-  };
-
-  const formatCurrency = (value) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2
-    }).format(value || 0);
-  };
-
-  const formatPrice = (value, symbol) => {
-    const decimals = symbol?.includes('JPY') ? 3 : 5;
-    return Number(value || 0).toFixed(decimals);
-  };
-
-  const getSignalColor = (action) => {
-    switch(action?.toLowerCase()) {
-      case 'buy': return '#10b981';
-      case 'sell': return '#ef4444';
-      default: return '#f59e0b';
-    }
-  };
-
-  const getPatternStrength = (strength) => {
-    if (strength > 0.8) return { label: 'Very Strong', color: '#10b981' };
-    if (strength > 0.6) return { label: 'Strong', color: '#3b82f6' };
-    if (strength > 0.4) return { label: 'Moderate', color: '#f59e0b' };
-    return { label: 'Weak', color: '#ef4444' };
-  };
-
-  const PairChart = ({ symbol, data, width = "100%", height = 200 }) => {
-    if (!data || data.length === 0) {
-      return (
-        <div className="flex items-center justify-center h-48 bg-gray-800 rounded">
-          <span className="text-gray-400">No data for {symbol}</span>
-        </div>
-      );
-    }
-
-    const chartData = data.map(item => ({
-      time: new Date(item.timestamp).toLocaleTimeString().slice(0, 5),
-      price: item.price,
-      bid: item.bid,
-      ask: item.ask
-    }));
-
-    return (
-      <ResponsiveContainer width={width} height={height}>
-        <LineChart data={chartData}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-          <XAxis dataKey="time" stroke="#9CA3AF" fontSize={10} />
-          <YAxis 
-            domain={['dataMin - 0.0001', 'dataMax + 0.0001']}
-            tickFormatter={(value) => formatPrice(value, symbol)}
-            stroke="#9CA3AF"
-            fontSize={10}
-          />
-          <Tooltip 
-            labelFormatter={(time) => `Time: ${time}`}
-            formatter={(value, name) => [formatPrice(value, symbol), name]}
-            contentStyle={{ 
-              backgroundColor: '#1F2937', 
-              border: '1px solid #374151',
-              borderRadius: '8px'
-            }}
-          />
-          <Line 
-            type="monotone" 
-            dataKey="price" 
-            stroke="#8B5CF6" 
-            strokeWidth={2}
-            dot={false}
-            name="Price"
-          />
-          <Line 
-            type="monotone" 
-            dataKey="bid" 
-            stroke="#10b981" 
-            strokeWidth={1}
-            dot={false}
-            name="Bid"
-          />
-          <Line 
-            type="monotone" 
-            dataKey="ask" 
-            stroke="#ef4444" 
-            strokeWidth={1}
-            dot={false}
-            name="Ask"
-          />
-        </LineChart>
-      </ResponsiveContainer>
-    );
-  };
-
-  const TradingSignalCard = ({ signal }) => (
-    <div className="bg-gray-800 p-4 rounded-lg border border-gray-700 mb-3">
-      <div className="flex justify-between items-start mb-2">
-        <div className="flex items-center space-x-2">
-          <span className="font-bold text-white">{signal.symbol}</span>
-          <span 
-            className="px-2 py-1 rounded text-xs font-bold text-white"
-            style={{ backgroundColor: getSignalColor(signal.action) }}
-          >
-            {signal.action}
-          </span>
-          <span className="text-sm text-gray-400">
-            {(signal.confidence * 100).toFixed(1)}%
-          </span>
-        </div>
-        <span className="text-xs text-gray-500">
-          {new Date(signal.timestamp).toLocaleTimeString()}
-        </span>
-      </div>
-      
-      <div className="grid grid-cols-3 gap-2 text-xs">
-        <div>
-          <span className="text-gray-400">Entry: </span>
-          <span className="text-white">{formatPrice(signal.entry_price, signal.symbol)}</span>
-        </div>
-        <div>
-          <span className="text-gray-400">SL: </span>
-          <span className="text-red-400">{formatPrice(signal.stop_loss, signal.symbol)}</span>
-        </div>
-        <div>
-          <span className="text-gray-400">TP: </span>
-          <span className="text-green-400">{formatPrice(signal.take_profit, signal.symbol)}</span>
-        </div>
-      </div>
-      
-      <div className="mt-2 text-xs">
-        <span className="text-gray-400">Size: </span>
-        <span className="text-white">{signal.position_size} lots</span>
-      </div>
-      
-      <div className="mt-2 text-xs text-gray-300 truncate">
-        {signal.reasoning}
-      </div>
-    </div>
-  );
-
-  const PatternCard = ({ symbol, pattern }) => {
-    if (!pattern?.pattern) return null;
+def create_price_chart(data, symbol):
+    """Create price chart for a symbol"""
+    if not data:
+        return None
     
-    const strength = getPatternStrength(pattern.pattern?.strength || 0);
+    df = pd.DataFrame(data)
+    if 'price' not in df.columns:
+        return None
     
-    return (
-      <div className="bg-gray-800 p-3 rounded-lg border border-gray-700">
-        <div className="flex justify-between items-center mb-2">
-          <span className="font-semibold text-white">{symbol}</span>
-          <span 
-            className="px-2 py-1 rounded text-xs font-bold"
-            style={{ backgroundColor: strength.color, color: 'white' }}
-          >
-            {strength.label}
-          </span>
-        </div>
-        
-        <div className="text-sm text-gray-300 mb-1">
-          Pattern: <span className="text-white">{pattern.pattern?.pattern || 'Unknown'}</span>
-        </div>
-        
-        {pattern.pattern?.current_price && (
-          <div className="text-sm text-gray-300">
-            Price: <span className="text-white">{formatPrice(pattern.pattern.current_price, symbol)}</span>
-          </div>
-        )}
-      </div>
-    );
-  };
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x=df.index,
+        y=df['price'],
+        mode='lines',
+        name=symbol,
+        line=dict(color='#8B5CF6', width=2)
+    ))
+    
+    fig.update_layout(
+        title=f"{symbol} Price Chart",
+        xaxis_title="Time",
+        yaxis_title="Price",
+        template="plotly_dark",
+        height=300,
+        margin=dict(l=0, r=0, t=30, b=0)
+    )
+    
+    return fig
 
-  return (
-    <div className="min-h-screen bg-gray-900 text-white p-4">
-      {/* Header */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <Brain className="w-8 h-8 text-purple-500" />
-            <div>
-              <h1 className="text-3xl font-bold">Advanced AI Trading System</h1>
-              <p className="text-gray-400">Neural Network | Multi-Currency | Auto-Trading</p>
-            </div>
-          </div>
-          
-          <div className="flex items-center space-x-4">
-            {/* Auto-Trading Toggle */}
-            <button
-              onClick={toggleAutoTrading}
-              className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-semibold transition-colors ${
-                autoTradingEnabled 
-                  ? 'bg-green-600 hover:bg-green-700' 
-                  : 'bg-red-600 hover:bg-red-700'
-              }`}
-            >
-              {autoTradingEnabled ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
-              <span>{autoTradingEnabled ? 'Auto-Trading ON' : 'Auto-Trading OFF'}</span>
-            </button>
-            
-            {/* Connection Status */}
-            <div className={`flex items-center space-x-2 px-4 py-2 rounded-lg ${
-              systemStatus.active_pairs > 0 ? 'bg-green-600' : 'bg-red-600'
-            }`}>
-              <div className="w-3 h-3 rounded-full bg-white opacity-75"></div>
-              <span>{systemStatus.active_pairs || 0}/{systemStatus.total_pairs || 20} Pairs Active</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Account Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div className="bg-gray-800 p-6 rounded-lg border border-gray-700">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-400 text-sm">Balance</p>
-              <p className="text-2xl font-bold text-white">{formatCurrency(accountInfo.balance)}</p>
-            </div>
-            <DollarSign className="w-8 h-8 text-green-400" />
-          </div>
-        </div>
-        
-        <div className="bg-gray-800 p-6 rounded-lg border border-gray-700">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-400 text-sm">Equity</p>
-              <p className="text-2xl font-bold text-blue-400">{formatCurrency(accountInfo.equity)}</p>
-            </div>
-            <TrendingUp className="w-8 h-8 text-blue-400" />
-          </div>
-        </div>
-        
-        <div className="bg-gray-800 p-6 rounded-lg border border-gray-700">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-400 text-sm">Profit/Loss</p>
-              <p className={`text-2xl font-bold ${(accountInfo.profit || 0) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                {formatCurrency(accountInfo.profit)}
-              </p>
-            </div>
-            <Activity className="w-8 h-8 text-purple-400" />
-          </div>
-        </div>
-        
-        <div className="bg-gray-800 p-6 rounded-lg border border-gray-700">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-400 text-sm">AI Predictions</p>
-              <p className="text-2xl font-bold text-yellow-400">{systemStatus.total_predictions || 0}</p>
-            </div>
-            <Brain className="w-8 h-8 text-yellow-400" />
-          </div>
-        </div>
-      </div>
-
-      {/* Main Dashboard */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        
-        {/* Charts Section */}
-        <div className="lg:col-span-3 space-y-6">
-          
-          {/* Pair Selection */}
-          <div className="bg-gray-800 p-4 rounded-lg border border-gray-700">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold">Multi-Currency Charts</h2>
-              <select 
-                value={selectedPair} 
-                onChange={(e) => setSelectedPair(e.target.value)}
-                className="bg-gray-700 text-white px-3 py-1 rounded border border-gray-600"
-              >
-                <optgroup label="Major Pairs">
-                  {MAJOR_PAIRS.map(pair => (
-                    <option key={pair} value={pair}>{pair}</option>
-                  ))}
-                </optgroup>
-                <optgroup label="Minor Pairs">
-                  {MINOR_PAIRS.map(pair => (
-                    <option key={pair} value={pair}>{pair}</option>
-                  ))}
-                </optgroup>
-                <optgroup label="Exotic Pairs">
-                  {EXOTIC_PAIRS.map(pair => (
-                    <option key={pair} value={pair}>{pair}</option>
-                  ))}
-                </optgroup>
-              </select>
-            </div>
-            
-            {/* Main Chart */}
-            <div className="h-96">
-              <PairChart 
-                symbol={selectedPair} 
-                data={marketData[selectedPair]} 
-                height={350}
-              />
-            </div>
-          </div>
-
-          {/* Major Pairs Overview */}
-          <div className="bg-gray-800 p-4 rounded-lg border border-gray-700">
-            <h2 className="text-xl font-semibold mb-4">Major Pairs Overview</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {MAJOR_PAIRS.map(pair => (
-                <div key={pair} className="bg-gray-700 p-3 rounded-lg">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="font-semibold">{pair}</span>
-                    {marketData[pair] && marketData[pair].length > 0 && (
-                      <span className="text-sm text-gray-300">
-                        {formatPrice(marketData[pair][marketData[pair].length - 1]?.price, pair)}
-                      </span>
-                    )}
-                  </div>
-                  <PairChart symbol={pair} data={marketData[pair]} height={120} />
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Minor Pairs Overview */}
-          <div className="bg-gray-800 p-4 rounded-lg border border-gray-700">
-            <h2 className="text-xl font-semibold mb-4">Minor Pairs Overview</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {MINOR_PAIRS.map(pair => (
-                <div key={pair} className="bg-gray-700 p-3 rounded-lg">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="font-semibold">{pair}</span>
-                    {marketData[pair] && marketData[pair].length > 0 && (
-                      <span className="text-sm text-gray-300">
-                        {formatPrice(marketData[pair][marketData[pair].length - 1]?.price, pair)}
-                      </span>
-                    )}
-                  </div>
-                  <PairChart symbol={pair} data={marketData[pair]} height={120} />
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Side Panel */}
-        <div className="space-y-6">
-          
-          {/* Trading Signals */}
-          <div className="bg-gray-800 p-4 rounded-lg border border-gray-700">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold flex items-center">
-                <Target className="w-5 h-5 mr-2" />
-                Trading Signals
-              </h2>
-              <span className="text-sm bg-purple-600 px-2 py-1 rounded">
-                {tradingSignals.length}
-              </span>
-            </div>
-            
-            <div className="max-h-80 overflow-y-auto">
-              {tradingSignals.slice(-10).reverse().map((signal, index) => (
-                <TradingSignalCard key={index} signal={signal} />
-              ))}
-              {tradingSignals.length === 0 && (
-                <p className="text-gray-400 text-center py-4">
-                  No signals generated yet
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Pattern Analysis */}
-          <div className="bg-gray-800 p-4 rounded-lg border border-gray-700">
-            <h2 className="text-lg font-semibold mb-4 flex items-center">
-              <BarChart3 className="w-5 h-5 mr-2" />
-              Pattern Analysis
-            </h2>
-            
-            <div className="space-y-3 max-h-60 overflow-y-auto">
-              {Object.entries(patternAnalysis).map(([symbol, pattern]) => (
-                <PatternCard key={symbol} symbol={symbol} pattern={pattern} />
-              ))}
-              {Object.keys(patternAnalysis).length === 0 && (
-                <p className="text-gray-400 text-center py-4">
-                  Analyzing patterns...
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* AI Predictions Summary */}
-          <div className="bg-gray-800 p-4 rounded-lg border border-gray-700">
-            <h2 className="text-lg font-semibold mb-4 flex items-center">
-              <Brain className="w-5 h-5 mr-2" />
-              AI Predictions
-            </h2>
-            
-            <div className="space-y-2">
-              {Object.entries(predictions).map(([symbol, preds]) => {
-                if (!preds || preds.length === 0) return null;
-                const latestPred = preds[preds.length - 1];
-                const action = latestPred?.prediction?.action;
-                const confidence = latestPred?.prediction?.confidence;
+def main():
+    # Header
+    st.markdown("# 🤖 Advanced AI Trading System")
+    st.markdown("**Neural Network | Multi-Currency | Auto-Trading**")
+    
+    # Fetch data
+    account_info = fetch_data("account-info")
+    market_data = fetch_data("market-data")
+    predictions = fetch_data("ai-predictions")
+    trading_signals = fetch_data("trading-signals")
+    system_status = fetch_data("system-status")
+    
+    # Connection status
+    active_pairs = system_status.get("active_pairs", 0)
+    if active_pairs > 0:
+        st.success(f"🟢 {active_pairs} Currency Pairs Active")
+    else:
+        st.error("🔴 Waiting for MT5 Connection")
+    
+    # Account Overview
+    st.subheader("📊 Account Overview")
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        st.metric("💰 Balance", format_currency(account_info.get('balance', 0)))
+    with col2:
+        st.metric("📈 Equity", format_currency(account_info.get('equity', 0)))
+    with col3:
+        profit = account_info.get('profit', 0)
+        st.metric("💵 P&L", format_currency(profit), delta=f"{profit:.2f}")
+    with col4:
+        st.metric("🤖 Predictions", system_status.get('total_predictions', 0))
+    
+    # Auto-Trading Control
+    st.subheader("🤖 Auto-Trading Control")
+    auto_trading = system_status.get('auto_trading_enabled', False)
+    
+    col1, col2 = st.columns([1, 3])
+    with col1:
+        if st.button("🟢 Enable Auto-Trading" if not auto_trading else "🔴 Disable Auto-Trading"):
+            try:
+                response = requests.post(f"{API_URL}/toggle-auto-trading", 
+                                       json={"enabled": not auto_trading})
+                if response.status_code == 200:
+                    st.success("Auto-trading toggled successfully!")
+                    st.rerun()
+            except:
+                st.error("Failed to toggle auto-trading")
+    
+    with col2:
+        status_color = "🟢" if auto_trading else "🔴"
+        st.info(f"{status_color} Auto-Trading: {'ENABLED' if auto_trading else 'DISABLED'}")
+    
+    # Charts Section
+    st.subheader("📈 Multi-Currency Charts")
+    
+    # Major Pairs
+    st.markdown("### Major Currency Pairs")
+    cols = st.columns(3)
+    
+    for i, pair in enumerate(MAJOR_PAIRS):
+        with cols[i % 3]:
+            pair_data = market_data.get(pair, [])
+            if pair_data:
+                latest_price = pair_data[-1].get('price', 0)
+                st.metric(pair, format_price(latest_price, pair))
                 
-                return (
-                  <div key={symbol} className="flex justify-between items-center p-2 bg-gray-700 rounded">
-                    <span className="text-sm font-medium">{symbol}</span>
-                    <div className="flex items-center space-x-2">
-                      <span 
-                        className="px-2 py-1 rounded text-xs font-bold"
-                        style={{ 
-                          backgroundColor: getSignalColor(action),
-                          color: 'white'
-                        }}
-                      >
-                        {action}
-                      </span>
-                      <span className="text-xs text-gray-300">
-                        {((confidence || 0) * 100).toFixed(0)}%
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* System Stats */}
-          <div className="bg-gray-800 p-4 rounded-lg border border-gray-700">
-            <h2 className="text-lg font-semibold mb-4">System Statistics</h2>
-            
-            <div className="space-y-3">
-              <div className="flex justify-between">
-                <span className="text-gray-400">Active Pairs</span>
-                <span className="text-white">{systemStatus.active_pairs || 0}/20</span>
-              </div>
-              
-              <div className="flex justify-between">
-                <span className="text-gray-400">Total Predictions</span>
-                <span className="text-white">{systemStatus.total_predictions || 0}</span>
-              </div>
-              
-              <div className="flex justify-between">
-                <span className="text-gray-400">Trading Signals</span>
-                <span className="text-white">{systemStatus.trading_signals_count || 0}</span>
-              </div>
-              
-              <div className="flex justify-between">
-                <span className="text-gray-400">Auto-Trading</span>
-                <span className={autoTradingEnabled ? 'text-green-400' : 'text-red-400'}>
-                  {autoTradingEnabled ? 'ENABLED' : 'DISABLED'}
-                </span>
-              </div>
-              
-              <div className="flex justify-between">
-                <span className="text-gray-400">Mode</span>
-                <span className="text-yellow-400">
-                  {systemStatus.demo_mode ? 'DEMO' : 'LIVE'}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Footer */}
-      <div className="mt-8 p-4 bg-gray-800 rounded-lg border border-gray-700">
-        <div className="flex items-center justify-between text-sm text-gray-400">
-          <div className="flex items-center space-x-4">
-            <span>🧠 Neural AI Processing</span>
-            <span>📊 20 Currency Pairs</span>
-            <span>⚡ Real-time Predictions</span>
-            <span>🛡️ Advanced Risk Management</span>
-          </div>
-          <div className="text-right">
-            <p>Last update: {new Date().toLocaleTimeString()}</p>
-            <p className="text-red-400 text-xs">⚠️ Trading involves substantial risk of loss</p>
-          </div>
-        </div>
-      </div>
+                # Create mini chart
+                if len(pair_data) > 1:
+                    chart_data = pd.DataFrame(pair_data)
+                    st.line_chart(chart_data.set_index('timestamp')['price'], height=150)
+                else:
+                    st.info("Building chart...")
+            else:
+                st.info(f"Waiting for {pair} data...")
+    
+    # Trading Signals
+    st.subheader("🎯 Recent Trading Signals")
+    
+    if trading_signals:
+        signals_df = pd.DataFrame(trading_signals[-10:])  # Last 10 signals
+        
+        for _, signal in signals_df.iterrows():
+            with st.container():
+                col1, col2, col3, col4 = st.columns([2, 1, 1, 2])
+                
+                with col1:
+                    action_color = {"BUY": "🟢", "SELL": "🔴", "HOLD": "🟡"}.get(signal.get('action', 'HOLD'), "🟡")
+                    st.write(f"**{signal.get('symbol')}** {action_color} {signal.get('action')}")
+                
+                with col2:
+                    st.write(f"Entry: {format_price(signal.get('entry_price', 0), signal.get('symbol'))}")
+                
+                with col3:
+                    confidence = signal.get('confidence', 0) * 100
+                    st.write(f"Confidence: {confidence:.1f}%")
+                
+                with col4:
+                    st.write(f"Size: {signal.get('position_size', 0)} lots")
+                
+                st.markdown("---")
+    else:
+        st.info("No trading signals generated yet")
+    
+    # AI Predictions Summary
+    st.subheader("🧠 AI Predictions Summary")
+    
+    if predictions:
+        pred_cols = st.columns(len(ALL_PAIRS[:6]))  # Show first 6 pairs
+        
+        for i, pair in enumerate(ALL_PAIRS[:6]):
+            if pair in predictions and predictions[pair]:
+                with pred_cols[i]:
+                    latest_pred = predictions[pair][-1]
+                    action = latest_pred.get('prediction', {}).get('action', 'HOLD')
+                    confidence = latest_pred.get('prediction', {}).get('confidence', 0)
+                    
+                    action_color = {"BUY": "🟢", "SELL": "🔴", "HOLD": "🟡"}.get(action, "🟡")
+                    
+                    st.metric(
+                        pair,
+                        f"{action_color} {action}",
+                        f"{confidence*100:.0f}% confidence"
+                    )
+    
+    # System Statistics
+    st.subheader("⚙️ System Statistics")
+    
+    stat_cols = st.columns(4)
+    
+    with stat_cols[0]:
+        st.metric("Active Pairs", f"{system_status.get('active_pairs', 0)}/20")
+    
+    with stat_cols[1]:
+        st.metric("Total Predictions", system_status.get('total_predictions', 0))
+    
+    with stat_cols[2]:
+        st.metric("Trading Signals", len(trading_signals))
+    
+    with stat_cols[3]:
+        demo_mode = system_status.get('demo_mode', True)
+        st.metric("Trading Mode", "DEMO" if demo_mode else "LIVE")
+    
+    # Pattern Analysis
+    st.subheader("📊 Pattern Analysis")
+    
+    pattern_data = fetch_data("pattern-analysis")
+    if pattern_data:
+        pattern_cols = st.columns(3)
+        
+        for i, (symbol, pattern) in enumerate(list(pattern_data.items())[:6]):
+            with pattern_cols[i % 3]:
+                if pattern and 'pattern' in pattern:
+                    pattern_info = pattern['pattern']
+                    pattern_type = pattern_info.get('pattern', 'Unknown')
+                    strength = pattern_info.get('strength', 0)
+                    
+                    st.write(f"**{symbol}**")
+                    st.write(f"Pattern: {pattern_type}")
+                    st.progress(strength, text=f"Strength: {strength:.1%}")
+    else:
+        st.info("Analyzing market patterns...")
+    
+    # Footer
+    st.markdown("---")
+    st.markdown("""
+    <div style="text-align: center; color: #666;">
+        <p>🧠 Neural AI Processing | 📊 Multi-Currency Analysis | ⚡ Real-time Predictions | 🛡️ Risk Management</p>
+        <p style="color: #ef4444;">⚠️ Trading involves substantial risk of loss</p>
+        <p>Last update: {}</p>
     </div>
-  );
-};
+    """.format(datetime.now().strftime('%H:%M:%S')), unsafe_allow_html=True)
+    
+    # Auto-refresh
+    time.sleep(1)
 
-export default AdvancedTradingDashboard;
+# Auto-refresh every 10 seconds
+if 'refresh_count' not in st.session_state:
+    st.session_state.refresh_count = 0
+
+if st.button("🔄 Refresh Data") or st.session_state.refresh_count % 30 == 0:
+    st.rerun()
+
+st.session_state.refresh_count += 1
+
+if __name__ == "__main__":
+    main()
