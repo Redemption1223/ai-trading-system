@@ -1,15 +1,12 @@
 import streamlit as st
 import requests
 import pandas as pd
-import time
 import json
 from datetime import datetime
-import plotly.graph_objects as go
-import plotly.express as px
 
 # Configure page
 st.set_page_config(
-    page_title="Advanced AI Trading Dashboard", 
+    page_title="AI Trading Dashboard", 
     layout="wide",
     initial_sidebar_state="collapsed"
 )
@@ -17,247 +14,182 @@ st.set_page_config(
 # API URL
 API_URL = st.secrets.get("API_URL", "https://ai-trading-system-production.up.railway.app")
 
-# Forex pairs
-MAJOR_PAIRS = ['EURUSD', 'GBPUSD', 'USDJPY', 'USDCHF', 'AUDUSD', 'USDCAD']
-MINOR_PAIRS = ['NZDUSD', 'EURJPY', 'GBPJPY', 'EURGBP', 'AUDCAD', 'AUDCHF']
-ALL_PAIRS = MAJOR_PAIRS + MINOR_PAIRS
-
-def fetch_data(endpoint):
-    """Fetch data from API"""
+def fetch_data_safe(endpoint):
+    """Safely fetch data from API with timeout"""
     try:
-        response = requests.get(f"{API_URL}/{endpoint}", timeout=10)
-        return response.json() if response.status_code == 200 else {}
-    except:
-        return {}
-
-def format_currency(value):
-    """Format currency values"""
-    try:
-        return f"${float(value):,.2f}" if value else "$0.00"
-    except:
-        return "$0.00"
-
-def format_price(value, symbol):
-    """Format price based on symbol"""
-    try:
-        decimals = 3 if 'JPY' in symbol else 5
-        return f"{float(value):.{decimals}f}"
-    except:
-        return "0.00000"
-
-def create_price_chart(data, symbol):
-    """Create price chart for a symbol"""
-    if not data:
-        return None
-    
-    df = pd.DataFrame(data)
-    if 'price' not in df.columns:
-        return None
-    
-    fig = go.Figure()
-    fig.add_trace(go.Scatter(
-        x=df.index,
-        y=df['price'],
-        mode='lines',
-        name=symbol,
-        line=dict(color='#8B5CF6', width=2)
-    ))
-    
-    fig.update_layout(
-        title=f"{symbol} Price Chart",
-        xaxis_title="Time",
-        yaxis_title="Price",
-        template="plotly_dark",
-        height=300,
-        margin=dict(l=0, r=0, t=30, b=0)
-    )
-    
-    return fig
+        response = requests.get(f"{API_URL}/{endpoint}", timeout=5)
+        if response.status_code == 200:
+            return response.json()
+        else:
+            return {"error": f"HTTP {response.status_code}"}
+    except requests.exceptions.Timeout:
+        return {"error": "Timeout"}
+    except requests.exceptions.ConnectionError:
+        return {"error": "Connection failed"}
+    except Exception as e:
+        return {"error": str(e)}
 
 def main():
     # Header
-    st.markdown("# 🤖 Advanced AI Trading System")
-    st.markdown("**Neural Network | Multi-Currency | Auto-Trading**")
+    st.title("🤖 Advanced AI Trading System")
+    st.markdown("**Multi-Currency Neural Network Trading Platform**")
     
-    # Fetch data
-    account_info = fetch_data("account-info")
-    market_data = fetch_data("market-data")
-    predictions = fetch_data("ai-predictions")
-    trading_signals = fetch_data("trading-signals")
-    system_status = fetch_data("system-status")
+    # Test API Connection
+    st.subheader("🔗 API Connection Test")
     
-    # Connection status
-    active_pairs = system_status.get("active_pairs", 0)
-    if active_pairs > 0:
-        st.success(f"🟢 {active_pairs} Currency Pairs Active")
+    with st.spinner("Testing API connection..."):
+        api_test = fetch_data_safe("")
+    
+    if "error" in api_test:
+        st.error(f"❌ API Connection Failed: {api_test['error']}")
+        st.info("🔧 Troubleshooting: Check if your Railway API is running")
+        
+        # Show API URL for debugging
+        st.code(f"API URL: {API_URL}")
+        
+        # Manual test button
+        if st.button("🔄 Retry Connection"):
+            st.rerun()
+            
     else:
-        st.error("🔴 Waiting for MT5 Connection")
+        st.success("✅ API Connected Successfully!")
+        
+        # Show API response
+        st.json(api_test)
     
-    # Account Overview
-    st.subheader("📊 Account Overview")
-    col1, col2, col3, col4 = st.columns(4)
+    # Account Info Section
+    st.subheader("💰 Account Information")
     
-    with col1:
-        st.metric("💰 Balance", format_currency(account_info.get('balance', 0)))
-    with col2:
-        st.metric("📈 Equity", format_currency(account_info.get('equity', 0)))
-    with col3:
-        profit = account_info.get('profit', 0)
-        st.metric("💵 P&L", format_currency(profit), delta=f"{profit:.2f}")
-    with col4:
-        st.metric("🤖 Predictions", system_status.get('total_predictions', 0))
+    account_data = fetch_data_safe("account-info")
     
-    # Auto-Trading Control
-    st.subheader("🤖 Auto-Trading Control")
-    auto_trading = system_status.get('auto_trading_enabled', False)
+    if "error" not in account_data:
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            balance = account_data.get('balance', 0)
+            st.metric("Balance", f"${balance:,.2f}")
+        
+        with col2:
+            equity = account_data.get('equity', 0)
+            st.metric("Equity", f"${equity:,.2f}")
+        
+        with col3:
+            profit = account_data.get('profit', 0)
+            st.metric("Profit/Loss", f"${profit:,.2f}")
+    else:
+        st.warning(f"Account data error: {account_data['error']}")
     
-    col1, col2 = st.columns([1, 3])
-    with col1:
-        if st.button("🟢 Enable Auto-Trading" if not auto_trading else "🔴 Disable Auto-Trading"):
-            try:
-                response = requests.post(f"{API_URL}/toggle-auto-trading", 
-                                       json={"enabled": not auto_trading})
-                if response.status_code == 200:
-                    st.success("Auto-trading toggled successfully!")
-                    st.rerun()
-            except:
-                st.error("Failed to toggle auto-trading")
+    # Market Data Section
+    st.subheader("📊 Market Data")
     
-    with col2:
-        status_color = "🟢" if auto_trading else "🔴"
-        st.info(f"{status_color} Auto-Trading: {'ENABLED' if auto_trading else 'DISABLED'}")
+    market_data = fetch_data_safe("market-data")
     
-    # Charts Section
-    st.subheader("📈 Multi-Currency Charts")
-    
-    # Major Pairs
-    st.markdown("### Major Currency Pairs")
-    cols = st.columns(3)
-    
-    for i, pair in enumerate(MAJOR_PAIRS):
-        with cols[i % 3]:
-            pair_data = market_data.get(pair, [])
-            if pair_data:
-                latest_price = pair_data[-1].get('price', 0)
-                st.metric(pair, format_price(latest_price, pair))
+    if "error" not in market_data and market_data:
+        # Show available pairs
+        st.write(f"**Available pairs:** {len(market_data)} currencies")
+        
+        # Display each pair's latest data
+        for symbol, data in market_data.items():
+            if data:  # Check if data exists for this pair
+                latest = data[-1]  # Get latest data point
                 
-                # Create mini chart
-                if len(pair_data) > 1:
-                    chart_data = pd.DataFrame(pair_data)
-                    st.line_chart(chart_data.set_index('timestamp')['price'], height=150)
-                else:
-                    st.info("Building chart...")
-            else:
-                st.info(f"Waiting for {pair} data...")
+                col1, col2, col3 = st.columns([2, 2, 2])
+                
+                with col1:
+                    st.write(f"**{symbol}**")
+                
+                with col2:
+                    price = latest.get('price', 0)
+                    decimals = 3 if 'JPY' in symbol else 5
+                    st.write(f"Price: {price:.{decimals}f}")
+                
+                with col3:
+                    timestamp = latest.get('timestamp', '')
+                    st.write(f"Updated: {timestamp}")
+    else:
+        st.info("📡 Waiting for market data from MT5...")
+        if "error" in market_data:
+            st.error(f"Market data error: {market_data['error']}")
+    
+    # System Status
+    st.subheader("⚙️ System Status")
+    
+    system_status = fetch_data_safe("system-status")
+    
+    if "error" not in system_status:
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            active_pairs = system_status.get('active_pairs', 0)
+            total_pairs = system_status.get('total_pairs', 20)
+            st.metric("Active Pairs", f"{active_pairs}/{total_pairs}")
+        
+        with col2:
+            predictions = system_status.get('total_predictions', 0)
+            st.metric("AI Predictions", predictions)
+        
+        with col3:
+            auto_trading = system_status.get('auto_trading_enabled', False)
+            st.metric("Auto Trading", "ON" if auto_trading else "OFF")
+    else:
+        st.warning(f"System status error: {system_status['error']}")
     
     # Trading Signals
     st.subheader("🎯 Recent Trading Signals")
     
-    if trading_signals:
-        signals_df = pd.DataFrame(trading_signals[-10:])  # Last 10 signals
+    signals = fetch_data_safe("trading-signals")
+    
+    if "error" not in signals and signals:
+        st.write(f"**{len(signals)} signals generated**")
         
-        for _, signal in signals_df.iterrows():
+        # Show last 5 signals
+        for signal in signals[-5:]:
             with st.container():
-                col1, col2, col3, col4 = st.columns([2, 1, 1, 2])
+                col1, col2, col3 = st.columns([2, 2, 2])
                 
                 with col1:
-                    action_color = {"BUY": "🟢", "SELL": "🔴", "HOLD": "🟡"}.get(signal.get('action', 'HOLD'), "🟡")
-                    st.write(f"**{signal.get('symbol')}** {action_color} {signal.get('action')}")
+                    symbol = signal.get('symbol', 'Unknown')
+                    action = signal.get('action', 'Unknown')
+                    st.write(f"**{symbol}** - {action}")
                 
                 with col2:
-                    st.write(f"Entry: {format_price(signal.get('entry_price', 0), signal.get('symbol'))}")
-                
-                with col3:
                     confidence = signal.get('confidence', 0) * 100
                     st.write(f"Confidence: {confidence:.1f}%")
                 
-                with col4:
-                    st.write(f"Size: {signal.get('position_size', 0)} lots")
+                with col3:
+                    entry_price = signal.get('entry_price', 0)
+                    st.write(f"Entry: {entry_price:.5f}")
                 
                 st.markdown("---")
     else:
-        st.info("No trading signals generated yet")
+        st.info("🤖 No trading signals yet")
+        if "error" in signals:
+            st.error(f"Signals error: {signals['error']}")
     
-    # AI Predictions Summary
-    st.subheader("🧠 AI Predictions Summary")
-    
-    if predictions:
-        pred_cols = st.columns(len(ALL_PAIRS[:6]))  # Show first 6 pairs
+    # Debug Information
+    with st.expander("🔍 Debug Information"):
+        st.write("**API Endpoints Tested:**")
+        st.write(f"- Base: {API_URL}")
+        st.write(f"- Account: {API_URL}/account-info")
+        st.write(f"- Market: {API_URL}/market-data")
+        st.write(f"- Status: {API_URL}/system-status")
+        st.write(f"- Signals: {API_URL}/trading-signals")
         
-        for i, pair in enumerate(ALL_PAIRS[:6]):
-            if pair in predictions and predictions[pair]:
-                with pred_cols[i]:
-                    latest_pred = predictions[pair][-1]
-                    action = latest_pred.get('prediction', {}).get('action', 'HOLD')
-                    confidence = latest_pred.get('prediction', {}).get('confidence', 0)
-                    
-                    action_color = {"BUY": "🟢", "SELL": "🔴", "HOLD": "🟡"}.get(action, "🟡")
-                    
-                    st.metric(
-                        pair,
-                        f"{action_color} {action}",
-                        f"{confidence*100:.0f}% confidence"
-                    )
-    
-    # System Statistics
-    st.subheader("⚙️ System Statistics")
-    
-    stat_cols = st.columns(4)
-    
-    with stat_cols[0]:
-        st.metric("Active Pairs", f"{system_status.get('active_pairs', 0)}/20")
-    
-    with stat_cols[1]:
-        st.metric("Total Predictions", system_status.get('total_predictions', 0))
-    
-    with stat_cols[2]:
-        st.metric("Trading Signals", len(trading_signals))
-    
-    with stat_cols[3]:
-        demo_mode = system_status.get('demo_mode', True)
-        st.metric("Trading Mode", "DEMO" if demo_mode else "LIVE")
-    
-    # Pattern Analysis
-    st.subheader("📊 Pattern Analysis")
-    
-    pattern_data = fetch_data("pattern-analysis")
-    if pattern_data:
-        pattern_cols = st.columns(3)
+        st.write("**Current Time:**", datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
         
-        for i, (symbol, pattern) in enumerate(list(pattern_data.items())[:6]):
-            with pattern_cols[i % 3]:
-                if pattern and 'pattern' in pattern:
-                    pattern_info = pattern['pattern']
-                    pattern_type = pattern_info.get('pattern', 'Unknown')
-                    strength = pattern_info.get('strength', 0)
-                    
-                    st.write(f"**{symbol}**")
-                    st.write(f"Pattern: {pattern_type}")
-                    st.progress(strength, text=f"Strength: {strength:.1%}")
-    else:
-        st.info("Analyzing market patterns...")
+        if st.button("🧪 Test All Endpoints"):
+            with st.spinner("Testing all endpoints..."):
+                endpoints = ["", "account-info", "market-data", "system-status", "trading-signals"]
+                for endpoint in endpoints:
+                    result = fetch_data_safe(endpoint)
+                    st.write(f"**{endpoint or 'root'}:** {'✅ OK' if 'error' not in result else '❌ ' + result['error']}")
     
-    # Footer
+    # Manual Refresh
     st.markdown("---")
-    st.markdown("""
-    <div style="text-align: center; color: #666;">
-        <p>🧠 Neural AI Processing | 📊 Multi-Currency Analysis | ⚡ Real-time Predictions | 🛡️ Risk Management</p>
-        <p style="color: #ef4444;">⚠️ Trading involves substantial risk of loss</p>
-        <p>Last update: {}</p>
-    </div>
-    """.format(datetime.now().strftime('%H:%M:%S')), unsafe_allow_html=True)
+    if st.button("🔄 Refresh All Data"):
+        st.rerun()
     
-    # Auto-refresh
-    time.sleep(1)
-
-# Auto-refresh every 10 seconds
-if 'refresh_count' not in st.session_state:
-    st.session_state.refresh_count = 0
-
-if st.button("🔄 Refresh Data") or st.session_state.refresh_count % 30 == 0:
-    st.rerun()
-
-st.session_state.refresh_count += 1
+    st.markdown("**Last update:** " + datetime.now().strftime('%H:%M:%S'))
 
 if __name__ == "__main__":
     main()
