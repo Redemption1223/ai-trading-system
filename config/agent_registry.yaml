@@ -1,0 +1,90 @@
+# Agent Registry and Coordination Settings
+agents:
+  AGENT_01:
+    name: "MT5_WINDOWS_CONNECTOR"
+    module: "core.mt5_windows_connector"
+    class: "MT5WindowsConnector"
+    priority: 1
+    enabled: true
+    
+  AGENT_02:
+    name: "SIGNAL_COORDINATOR"
+    module: "core.signal_coordinator"
+    class: "SignalCoordinator"
+    priority: 1
+    enabled: true
+    
+  AGENT_03:
+    name: "RISK_CALCULATOR"
+    module: "core.risk_calculator"
+    class: "RiskCalculator"
+    priority: 1
+    enabled: true
+    
+  AGENT_04:
+    name: "CHART_SIGNAL_AGENT"
+    module: "core.chart_signal_agent"
+    class: "ChartSignalAgent"
+    priority: 2
+    enabled: true
+    
+  AGENT_05:
+    name: "NEURAL_SIGNAL_BRAIN"
+    module: "ml.neural_signal_brain"
+    class: "NeuralSignalBrain"
+    priority: 2
+    enabled: true
+    
+  AGENT_06:
+    name: "TECHNICAL_ANALYST"
+    module: "data.technical_analyst"
+    class: "TechnicalAnalyst"
+    priority: 2
+    enabled: true
+    
+  AGENT_07:
+    name: "NEWS_SENTIMENT_READER"
+    module: "data.news_sentiment_reader"
+    class: "NewsSentimentReader"
+    priority: 3
+    enabled: true
+    
+  AGENT_08:
+    name: "LEARNING_OPTIMIZER"
+    module: "data.learning_optimizer"
+    class: "LearningOptimizer"
+    priority: 3
+    enabled: true
+    
+  AGENT_09:
+    name: "PROFESSIONAL_DASHBOARD"
+    module: "ui.professional_dashboard"
+    class: "ProfessionalDashboard"
+    priority: 2
+    enabled: true
+    
+  AGENT_10:
+    name: "DATA_STREAM_MANAGER"
+    module: "data.data_stream_manager"
+    class: "DataStreamManager"
+    priority: 1
+    enabled: true
+    
+  AGENT_11:
+    name: "SYSTEM_MONITOR"
+    module: "utils.system_monitor"
+    class: "SystemMonitor"
+    priority: 3
+    enabled: true
+    
+  AGENT_12:
+    name: "SIGNAL_VALIDATOR"
+    module: "validation.signal_validator"
+    class: "SignalValidator"
+    priority: 2
+    enabled: true
+
+coordination:
+  signal_timeout: 30  # seconds
+  agent_health_check: 60  # seconds
+  max_signal_age: 300  # seconds

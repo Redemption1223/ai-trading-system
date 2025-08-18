@@ -1,0 +1,64 @@
+{
+  "default": [
+    {
+      "key": "trading/config/topology",
+      "value": "{\"type\": \"hybrid-mesh-hierarchical\", \"max_agents\": 20, \"auto_scale\": true, \"fault_tolerance\": true}",
+      "namespace": "default",
+      "timestamp": 1755445457027
+    },
+    {
+      "key": "trading/patterns/market",
+      "value": "{\"neural_learning\": true, \"pattern_recognition\": true, \"cross_validation\": true}",
+      "namespace": "default",
+      "timestamp": 1755445459171
+    },
+    {
+      "key": "trading/risk/parameters",
+      "value": "{\"max_risk_per_trade\": 0.02, \"max_daily_loss\": 0.05, \"position_sizing\": \"dynamic\"}",
+      "namespace": "default",
+      "timestamp": 1755445461363
+    },
+    {
+      "key": "swarm_analysis",
+      "value": "Initializing AGI Trading System configuration - found existing comprehensive system with 12 agents, multiple entry points, and extensive infrastructure",
+      "namespace": "default",
+      "timestamp": 1755445516445
+    },
+    {
+      "key": "swarm_progress",
+      "value": "Dependencies installation in progress - found 60% setup completion, fixing missing packages and agent initialization errors",
+      "namespace": "default",
+      "timestamp": 1755445536753
+    },
+    {
+      "key": "trading/agents/configuration",
+      "value": "{\"core_agents\": [\"MT5WindowsConnector\", \"SignalCoordinator\", \"RiskCalculator\", \"ChartSignalAgent\"], \"ml_agents\": [\"NeuralSignalBrain\"], \"data_agents\": [\"TechnicalAnalyst\", \"NewsSentimentReader\", \"LearningOptimizer\", \"DataStreamManager\"], \"system_agents\": [\"ProfessionalDashboard\", \"SystemMonitor\", \"SignalValidator\"], \"coordination\": \"hybrid-mesh-hierarchical\", \"fault_tolerance\": true, \"neural_training\": true}",
+      "namespace": "default",
+      "timestamp": 1755446002341
+    },
+    {
+      "key": "trading/coordination/mesh",
+      "value": "{\"peer_agents\": [\"MT5WindowsConnector\", \"SignalCoordinator\", \"RiskCalculator\", \"ChartSignalAgent\"], \"data_flow\": \"bidirectional\", \"fault_tolerance\": \"byzantine\", \"consensus_algorithm\": \"raft\"}",
+      "namespace": "default",
+      "timestamp": 1755446024211
+    },
+    {
+      "key": "trading/coordination/hierarchical",
+      "value": "{\"master_coordinator\": \"SignalCoordinator\", \"layer1\": [\"RiskCalculator\", \"SignalValidator\"], \"layer2\": [\"MT5WindowsConnector\", \"ChartSignalAgent\", \"NeuralSignalBrain\"], \"layer3\": [\"TechnicalAnalyst\", \"NewsSentimentReader\", \"DataStreamManager\", \"SystemMonitor\"], \"layer4\": [\"ProfessionalDashboard\", \"LearningOptimizer\"]}",
+      "namespace": "default",
+      "timestamp": 1755446025906
+    },
+    {
+      "key": "trading/neural/config",
+      "value": "{\"pattern_learning\": true, \"market_intelligence\": true, \"adaptive_strategies\": true, \"real_time_training\": true, \"models\": [\"lstm\", \"transformer\", \"ensemble\"], \"training_data\": [\"price_patterns\", \"sentiment_scores\", \"technical_indicators\", \"volume_profiles\"]}",
+      "namespace": "default",
+      "timestamp": 1755446027773
+    },
+    {
+      "key": "trading/monitoring/config",
+      "value": "{\"real_time_metrics\": true, \"bottleneck_detection\": true, \"auto_scaling\": true, \"health_checks\": [\"latency\", \"accuracy\", \"throughput\", \"memory_usage\"], \"alert_thresholds\": {\"latency_ms\": 100, \"accuracy_min\": 0.85, \"memory_usage_max\": 0.8}}",
+      "namespace": "default",
+      "timestamp": 1755446029837
+    }
+  ]
+}

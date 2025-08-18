@@ -1,0 +1,23 @@
+# News Sources Configuration
+news_apis:
+  economic_calendar:
+    - name: "forexfactory"
+      url: "https://www.forexfactory.com/calendar"
+      importance: ["high", "medium"]
+    - name: "investing"
+      url: "https://www.investing.com/economic-calendar/"
+      
+  news_feeds:
+    - name: "reuters"
+      rss: "https://feeds.reuters.com/reuters/businessNews"
+    - name: "bloomberg"
+      rss: "https://feeds.bloomberg.com/markets/news.rss"
+      
+sentiment_analysis:
+  update_frequency: 300  # seconds
+  sentiment_threshold: 0.6
+  impact_duration: 3600  # seconds
+  
+keywords:
+  positive: ["rally", "surge", "boom", "growth", "bullish"]
+  negative: ["crash", "plunge", "decline", "recession", "bearish"]

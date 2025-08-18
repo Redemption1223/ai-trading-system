@@ -1,0 +1,46 @@
+/* Dashboard-specific styles */
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    background-color: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.system-status {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.metric-card {
+    background-color: var(--bg-secondary);
+    padding: 15px;
+    border-radius: 8px;
+    text-align: center;
+    min-width: 120px;
+}
+
+.metric-value {
+    font-size: 24px;
+    font-weight: bold;
+    margin: 5px 0;
+}
+
+.metric-label {
+    color: var(--text-secondary);
+    font-size: 12px;
+}
+
+.signal-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.chart-container {
+    height: 600px;
+    margin: 10px 0;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+}

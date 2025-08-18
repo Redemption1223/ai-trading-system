@@ -1,0 +1,65 @@
+/* Professional AGI Trading System Theme */
+:root {
+    --bg-primary: #1a1a1a;
+    --bg-secondary: #2d2d2d;
+    --text-primary: #ffffff;
+    --text-secondary: #b3b3b3;
+    --accent-green: #00ff00;
+    --accent-red: #ff0000;
+    --accent-yellow: #ffff00;
+    --border-color: #404040;
+}
+
+body {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: 'Consolas', 'Monaco', monospace;
+    margin: 0;
+    padding: 0;
+}
+
+.dashboard-container {
+    display: grid;
+    grid-template-columns: 30% 50% 20%;
+    height: 100vh;
+    gap: 10px;
+    padding: 10px;
+}
+
+.panel {
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 15px;
+    overflow-y: auto;
+}
+
+.panel-header {
+    font-weight: bold;
+    margin-bottom: 15px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 10px;
+}
+
+.signal-item {
+    padding: 10px;
+    margin: 5px 0;
+    border-radius: 4px;
+    border-left: 4px solid;
+}
+
+.signal-buy { border-left-color: var(--accent-green); }
+.signal-sell { border-left-color: var(--accent-red); }
+.signal-neutral { border-left-color: var(--accent-yellow); }
+
+.status-indicator {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 8px;
+}
+
+.status-online { background-color: var(--accent-green); }
+.status-offline { background-color: var(--accent-red); }
+.status-warning { background-color: var(--accent-yellow); }

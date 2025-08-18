@@ -1,0 +1,33 @@
+# UI Dashboard Configuration
+dashboard:
+  theme: "professional_dark"
+  auto_refresh: 1000  # milliseconds
+  layout: "grid"
+  
+panels:
+  signals:
+    position: "left"
+    width: "30%"
+    refresh_rate: 1000
+    
+  charts:
+    position: "center"
+    width: "50%"
+    refresh_rate: 5000
+    
+  monitoring:
+    position: "right"
+    width: "20%"
+    refresh_rate: 2000
+    
+colors:
+  profit: "#00ff00"
+  loss: "#ff0000"
+  neutral: "#ffff00"
+  background: "#1a1a1a"
+  text: "#ffffff"
+  
+alerts:
+  sound_enabled: true
+  popup_enabled: true
+  duration: 5000  # milliseconds

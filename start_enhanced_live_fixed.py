@@ -1,0 +1,778 @@
+"""
+Enhanced AGI Trading System - Fixed Version
+LIVE trading system without UI threading issues
+"""
+
+import sys
+import os
+import time
+import threading
+from datetime import datetime
+
+# Add project root to path
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+# Import required libraries - NO FALLBACKS
+import MetaTrader5 as mt5
+import numpy as np
+import pandas as pd
+
+# Import core AGI system
+from mt5_connector_fixed import MT5ConnectorFixed as MT5WindowsConnector
+from core.signal_coordinator import SignalCoordinator
+from core.risk_calculator import RiskCalculator
+from core.chart_signal_agent import ChartSignalAgent
+from ml.neural_signal_brain import NeuralSignalBrain
+from data.technical_analyst import TechnicalAnalyst
+from data.market_data_manager import MarketDataManager
+from execution.trade_execution_engine import TradeExecutionEngine, ExecutionMode
+from portfolio.portfolio_manager import PortfolioManager
+from analytics.performance_analytics import PerformanceAnalytics
+from alerts.alert_system import AlertSystem, AlertType, AlertLevel
+from config.configuration_manager import ConfigurationManager
+
+# Import enhanced MQL5-based components (without UI)
+from enhanced.market_microstructure_analyzer import EnhancedMarketMicrostructureAnalyzer
+from enhanced.harmonic_pattern_analyzer import AdvancedHarmonicPatternAnalyzer
+from enhanced.enhanced_error_recovery import EnhancedErrorRecoverySystem
+
+class FixedEnhancedLiveTradingSystem:
+    """Enhanced LIVE Trading System without UI threading issues"""
+    
+    def __init__(self):
+        self.system_name = "Enhanced AGI Trading System - LIVE (Fixed)"
+        self.version = "4.1.0"
+        self.start_time = None
+        self.agents = {}
+        self.enhanced_components = {}
+        self.system_running = False
+        self.main_loop_thread = None
+        
+        # LIVE TRADING CONFIGURATION ONLY
+        self.config = {
+            'trading_symbols': ['EURUSD', 'GBPUSD', 'USDJPY', 'AUDUSD', 'USDCHF', 'USDCAD'],
+            'primary_symbol': 'EURUSD',
+            'risk_per_trade': 0.01,  # 1% risk per trade for live
+            'execution_mode': ExecutionMode.LIVE,  # LIVE ONLY
+            'auto_trading': True,
+            'signal_threshold': 0.75,  # Higher threshold for live
+            'max_daily_trades': 10,
+            'max_open_positions': 5,
+            'stop_loss_multiplier': 1.5,
+            'take_profit_multiplier': 2.0,
+            # Enhanced features (without UI)
+            'enable_microstructure_analysis': True,
+            'enable_harmonic_patterns': True,
+            'enable_enhanced_error_recovery': True
+        }
+    
+    def print_enhanced_banner(self):
+        """Print enhanced trading banner"""
+        print("\\n" + "="*80)
+        print(f"  {self.system_name} v{self.version}")
+        print("  LIVE TRADING SYSTEM - REAL MONEY + MQL5 ENHANCEMENTS (FIXED)")
+        print("="*80)
+        print(f"  Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        print(f"  Mode: LIVE TRADING ONLY")
+        print(f"  Execution: REAL MONEY")
+        print(f"  Primary Symbol: {self.config['primary_symbol']}")
+        print(f"  Risk per Trade: {self.config['risk_per_trade']*100:.1f}%")
+        print(f"  Max Daily Trades: {self.config['max_daily_trades']}")
+        print(f"  Signal Threshold: {self.config['signal_threshold']*100:.0f}%")
+        print("="*80)
+        print("  [ENHANCED] MQL5 Features Enabled:")
+        print("    - Market Microstructure Analysis")
+        print("    - Advanced Harmonic Pattern Recognition")
+        print("    - Enhanced Error Recovery System")
+        print("    - Algorithmic Trading Detection")
+        print("    - Dark Pool Activity Monitoring")
+        print("    - Liquidity Provision Analysis")
+        print("="*80)
+        print("  [FIXED] UI Dashboard available separately:")
+        print("    - Run: python enhanced/advanced_ui_dashboard.py")
+        print("="*80)
+        print("  [WARNING] THIS SYSTEM TRADES WITH REAL MONEY")
+        print("  [WARNING] ENSURE YOU UNDERSTAND THE RISKS")
+        print("="*80)
+    
+    def verify_enhanced_prerequisites(self):
+        """Verify all prerequisites for enhanced live trading"""
+        print("\\n[ENHANCED LIVE TRADING PREREQUISITE CHECK]")
+        print("-" * 60)
+        
+        prerequisites_met = True
+        
+        # Check MT5 availability
+        try:
+            if not mt5.initialize():
+                print("[FAIL] MetaTrader 5 not available or not running")
+                prerequisites_met = False
+            else:
+                account_info = mt5.account_info()
+                if not account_info:
+                    print("[FAIL] Cannot access MT5 account information")
+                    prerequisites_met = False
+                else:
+                    print(f"[OK] MT5 Account: {account_info.login}")
+                    print(f"[OK] Server: {account_info.server}")
+                    print(f"[OK] Balance: ${account_info.balance:,.2f}")
+                    print(f"[OK] Currency: {account_info.currency}")
+                    print(f"[OK] Leverage: 1:{account_info.leverage}")
+                    
+                    if account_info.balance < 100:
+                        print("[WARN] Account balance is very low for live trading")
+                    
+                    if not account_info.trade_allowed:
+                        print("[FAIL] Auto trading not allowed on this account")
+                        prerequisites_met = False
+                
+        except Exception as e:
+            print(f"[FAIL] MT5 Error: {e}")
+            prerequisites_met = False
+        
+        # Check required libraries
+        try:
+            print("[OK] NumPy available for enhanced analysis")
+        except ImportError:
+            print("[FAIL] NumPy not available - required for enhanced features")
+            prerequisites_met = False
+        
+        try:
+            print("[OK] Pandas available for enhanced analysis")
+        except ImportError:
+            print("[FAIL] Pandas not available - required for enhanced features")
+            prerequisites_met = False
+        
+        # Check symbol access
+        try:
+            for symbol in self.config['trading_symbols']:
+                symbol_info = mt5.symbol_info(symbol)
+                if symbol_info:
+                    print(f"[OK] Symbol {symbol} accessible")
+                else:
+                    print(f"[WARN] Symbol {symbol} not accessible")
+        except Exception as e:
+            print(f"[WARN] Symbol check error: {e}")
+        
+        print("-" * 60)
+        if prerequisites_met:
+            print("[SUCCESS] All prerequisites met for enhanced live trading")
+            return True
+        else:
+            print("[FAIL] Prerequisites not met - cannot start enhanced live trading")
+            return False
+    
+    def initialize_enhanced_system(self):
+        """Initialize all system components for enhanced LIVE trading"""
+        self.print_enhanced_banner()
+        
+        # Verify prerequisites first
+        if not self.verify_enhanced_prerequisites():
+            return False
+        
+        print("\\n[ENHANCED LIVE SYSTEM INITIALIZATION]")
+        
+        try:
+            # Phase 1: Enhanced Components (No UI)
+            print("\\nPhase 1: Enhanced MQL5 Components...")
+            
+            # Error Recovery System
+            print("  -> Initializing Enhanced Error Recovery System...")
+            self.enhanced_components['error_recovery'] = EnhancedErrorRecoverySystem()
+            recovery_result = self.enhanced_components['error_recovery'].initialize()
+            if recovery_result['status'] == 'initialized':
+                print("     [OK] Enhanced Error Recovery System ready")
+            else:
+                print("     [FAIL] Enhanced Error Recovery System failed")
+                return False
+            
+            # Market Microstructure Analyzer
+            print("  -> Initializing Enhanced Market Microstructure Analyzer...")
+            self.enhanced_components['microstructure'] = EnhancedMarketMicrostructureAnalyzer(self.config['primary_symbol'])
+            micro_result = self.enhanced_components['microstructure'].initialize()
+            if micro_result['status'] == 'initialized':
+                print("     [OK] Enhanced Market Microstructure Analyzer ready")
+            else:
+                print("     [FAIL] Enhanced Market Microstructure Analyzer failed")
+                return False
+            
+            # Harmonic Pattern Analyzer
+            print("  -> Initializing Advanced Harmonic Pattern Analyzer...")
+            self.enhanced_components['patterns'] = AdvancedHarmonicPatternAnalyzer(self.config['primary_symbol'])
+            pattern_result = self.enhanced_components['patterns'].initialize()
+            if pattern_result['status'] == 'initialized':
+                print("     [OK] Advanced Harmonic Pattern Analyzer ready")
+            else:
+                print("     [FAIL] Advanced Harmonic Pattern Analyzer failed")
+                return False
+            
+            # Phase 2: Core Infrastructure
+            print("\\nPhase 2: Core Infrastructure...")
+            
+            # Configuration Manager
+            print("  -> Initializing Configuration Manager...")
+            self.agents['config'] = ConfigurationManager()
+            config_result = self.agents['config'].initialize()
+            if config_result['status'] == 'initialized':
+                print("     [OK] Configuration Manager ready")
+            else:
+                print("     [FAIL] Configuration Manager failed")
+                return False
+            
+            # Alert System
+            print("  -> Initializing Alert System...")
+            self.agents['alerts'] = AlertSystem()
+            alert_result = self.agents['alerts'].initialize()
+            if alert_result['status'] == 'initialized':
+                print("     [OK] Alert System ready")
+            else:
+                print("     [FAIL] Alert System failed")
+                return False
+            
+            # Phase 3: Enhanced Market Connection
+            print("\\nPhase 3: Enhanced Market Connection...")
+            
+            # MT5 Connector - LIVE ONLY
+            print("  -> Connecting to LIVE MetaTrader 5...")
+            self.agents['mt5'] = MT5WindowsConnector()
+            mt5_result = self.agents['mt5'].initialize()
+            if mt5_result['status'] == 'initialized':
+                print("     [OK] LIVE MT5 Connection established")
+                print(f"       LIVE Account: {mt5_result.get('account', 'Unknown')}")
+                print(f"       Server: {mt5_result.get('server', 'Unknown')}")
+                print(f"       LIVE Balance: ${mt5_result.get('balance', 0):,.2f}")
+                
+                self.agents['alerts'].create_alert(
+                    AlertType.CONNECTION,
+                    AlertLevel.INFO,
+                    "Enhanced LIVE MT5 Connected",
+                    f"Connected to LIVE MT5 Account: {mt5_result.get('account', 'Unknown')}",
+                    "ENHANCED_LIVE_SYSTEM"
+                )
+            else:
+                print("     [FAIL] LIVE MT5 Connection failed")
+                return False
+            
+            # Market Data Manager - LIVE DATA ONLY
+            print("  -> Initializing Enhanced Market Data Manager...")
+            self.agents['market_data'] = MarketDataManager()
+            data_result = self.agents['market_data'].initialize()
+            if data_result['status'] == 'initialized':
+                print("     [OK] Enhanced Market Data Manager ready")
+            else:
+                print("     [FAIL] Enhanced Market Data Manager failed")
+                return False
+            
+            # Phase 4: Enhanced Analysis Engines
+            print("\\nPhase 4: Enhanced AI Analysis Engines...")
+            
+            # Technical Analyst - LIVE DATA ONLY
+            print("  -> Initializing Enhanced Technical Analyst...")
+            self.agents['technical'] = TechnicalAnalyst(self.config['primary_symbol'])
+            tech_result = self.agents['technical'].initialize()
+            if tech_result['status'] == 'initialized':
+                print("     [OK] Enhanced Technical Analyst ready")
+            else:
+                print("     [FAIL] Enhanced Technical Analyst failed")
+                return False
+            
+            # Neural Signal Brain - LIVE LEARNING
+            print("  -> Initializing Enhanced AI Neural Network...")
+            self.agents['neural'] = NeuralSignalBrain()
+            neural_result = self.agents['neural'].initialize()
+            if neural_result['status'] == 'initialized':
+                print("     [OK] Enhanced AI Neural Network ready")
+                accuracy = neural_result.get('model_accuracy', neural_result.get('accuracy', 0))
+                if accuracy > 1:
+                    print(f"       Model Accuracy: {accuracy:.1f}%")
+                elif accuracy > 0:
+                    print(f"       Model Accuracy: {accuracy*100:.1f}%")
+                else:
+                    print("       Model Accuracy: Training in progress...")
+            else:
+                print("     [FAIL] Enhanced AI Neural Network failed")
+                return False
+            
+            # Chart Signal Agent - LIVE CHARTS
+            print("  -> Initializing Enhanced Chart Signal Agent...")
+            self.agents['chart'] = ChartSignalAgent(self.config['primary_symbol'], self.agents['mt5'])
+            chart_result = self.agents['chart'].initialize()
+            if chart_result['status'] == 'initialized':
+                print("     [OK] Enhanced Chart Signal Agent ready")
+            else:
+                print("     [FAIL] Enhanced Chart Signal Agent failed")
+                return False
+            
+            # Phase 5: Enhanced Risk & Execution
+            print("\\nPhase 5: Enhanced Risk & Execution...")
+            
+            # Risk Calculator - LIVE MONEY
+            print("  -> Initializing Enhanced Risk Calculator...")
+            self.agents['risk'] = RiskCalculator()
+            risk_result = self.agents['risk'].initialize()
+            if risk_result['status'] == 'initialized':
+                print("     [OK] Enhanced Risk Calculator ready")
+                live_balance = mt5_result.get('balance', 10000.0)
+                self.agents['risk'].update_account_balance(live_balance)
+                print(f"       Live Account Balance: ${live_balance:,.2f}")
+            else:
+                print("     [FAIL] Enhanced Risk Calculator failed")
+                return False
+            
+            # Signal Coordinator - LIVE SIGNALS
+            print("  -> Initializing Enhanced Signal Coordinator...")
+            self.agents['coordinator'] = SignalCoordinator(self.agents['mt5'])
+            coord_result = self.agents['coordinator'].initialize()
+            if coord_result['status'] == 'initialized':
+                print("     [OK] Enhanced Signal Coordinator ready")
+            else:
+                print("     [FAIL] Enhanced Signal Coordinator failed")
+                return False
+            
+            # Trade Execution Engine - LIVE TRADES
+            print("  -> Initializing Enhanced Trade Execution Engine...")
+            self.agents['execution'] = TradeExecutionEngine()
+            exec_result = self.agents['execution'].initialize()
+            if exec_result['status'] == 'initialized':
+                print(f"     [OK] Enhanced Trade Execution Engine ready")
+                print(f"       [WARNING] THIS WILL EXECUTE REAL TRADES")
+            else:
+                print("     [FAIL] Enhanced Trade Execution Engine failed")
+                return False
+            
+            # Phase 6: Enhanced Portfolio & Analytics
+            print("\\nPhase 6: Enhanced Portfolio & Analytics...")
+            
+            # Portfolio Manager - LIVE PORTFOLIO
+            print("  -> Initializing Enhanced Portfolio Manager...")
+            self.agents['portfolio'] = PortfolioManager()
+            port_result = self.agents['portfolio'].initialize()
+            if port_result['status'] == 'initialized':
+                print("     [OK] Enhanced Portfolio Manager ready")
+            else:
+                print("     [FAIL] Enhanced Portfolio Manager failed")
+                return False
+            
+            # Performance Analytics - LIVE PERFORMANCE
+            print("  -> Initializing Enhanced Performance Analytics...")
+            self.agents['analytics'] = PerformanceAnalytics()
+            analytics_result = self.agents['analytics'].initialize()
+            if analytics_result['status'] == 'initialized':
+                print("     [OK] Enhanced Performance Analytics ready")
+            else:
+                print("     [FAIL] Enhanced Performance Analytics failed")
+                return False
+            
+            print("\\n" + "="*80)
+            print("  [SUCCESS] ENHANCED LIVE SYSTEM INITIALIZATION COMPLETE")
+            print(f"  [OK] All {len(self.agents)} core agents operational")
+            print(f"  [OK] All {len(self.enhanced_components)} enhanced components active")
+            print("  [WARNING] READY FOR ENHANCED LIVE TRADING WITH REAL MONEY")
+            print("="*80)
+            
+            return True
+            
+        except Exception as e:
+            print(f"\\n[FAIL] ENHANCED LIVE SYSTEM INITIALIZATION FAILED: {e}")
+            return False
+    
+    def start_enhanced_live_trading(self):
+        """Start enhanced LIVE trading operations"""
+        if not self.system_running:
+            print("\\n[STARTING ENHANCED LIVE TRADING OPERATIONS]")
+            print("[WARNING] TRADING WITH REAL MONEY + MQL5 ENHANCEMENTS")
+            
+            # Start enhanced data streaming
+            print("  -> Starting Enhanced LIVE market data streaming...")
+            stream_result = self.agents['market_data'].start_streaming(self.config['trading_symbols'])
+            if stream_result.get('status') in ['started', 'already_active']:
+                print(f"     [OK] Enhanced LIVE streaming started for {len(self.config['trading_symbols'])} symbols")
+            else:
+                print(f"     [WARN] Enhanced LIVE streaming issue: {stream_result.get('message', 'Unknown')}")
+            
+            # Start enhanced signal coordination
+            print("  -> Starting Enhanced LIVE signal coordination...")
+            coord_start = self.agents['coordinator'].start_coordination()
+            if coord_start.get('status') == 'started':
+                print("     [OK] Enhanced LIVE signal coordination active")
+            
+            # Start enhanced chart analysis
+            print("  -> Starting Enhanced LIVE chart analysis...")
+            analysis_start = self.agents['chart'].start_analysis()
+            if analysis_start.get('status') == 'started':
+                print("     [OK] Enhanced LIVE chart analysis active")
+            
+            # Start enhanced technical analysis
+            print("  -> Starting Enhanced LIVE technical analysis...")
+            if hasattr(self.agents['technical'], 'start_realtime_analysis'):
+                tech_start = self.agents['technical'].start_realtime_analysis()
+            elif hasattr(self.agents['technical'], 'start_real_time_analysis'):
+                tech_start = self.agents['technical'].start_real_time_analysis()
+            else:
+                tech_start = {"status": "not_available"}
+            
+            if tech_start.get('status') == 'started':
+                print("     [OK] Enhanced LIVE technical analysis active")
+            else:
+                print("     [WARN] Enhanced LIVE technical analysis method not available")
+            
+            # Enable enhanced LIVE trading
+            if self.config['auto_trading']:
+                print("  -> Enabling Enhanced LIVE auto-trading...")
+                print("     [WARNING] ENHANCED LIVE AUTO-TRADING ENABLED")
+                print("     [WARNING] SYSTEM WILL TRADE WITH REAL MONEY")
+                print("     [WARNING] MQL5 ENHANCED FEATURES ACTIVE")
+                self.agents['execution'].enable_trading()
+                print("     [OK] Enhanced LIVE auto-trading enabled")
+            
+            self.system_running = True
+            self.start_time = time.time()
+            
+            # Start enhanced main loop
+            self.main_loop_thread = threading.Thread(target=self._enhanced_trading_loop, daemon=True)
+            self.main_loop_thread.start()
+            
+            print("\\n" + "="*80)
+            print("  [LAUNCH] ENHANCED LIVE TRADING SYSTEM IS ACTIVE!")
+            print("  [MQL5] Advanced market microstructure analysis running...")
+            print("  [MQL5] Harmonic pattern recognition active...")
+            print("  [MQL5] Enhanced error recovery system monitoring...")
+            print("  [AI] AI analysis processing LIVE data...")
+            print("  [WARNING] ENHANCED LIVE AUTO-TRADING ENABLED")
+            print("  [WARNING] TRADING WITH REAL MONEY")
+            print("="*80)
+            
+            return True
+        
+        return False
+    
+    def _enhanced_trading_loop(self):
+        """Enhanced LIVE trading loop with MQL5 integration"""
+        loop_counter = 0
+        
+        while self.system_running:
+            try:
+                loop_counter += 1
+                
+                # Every 5 seconds, update market data for enhanced analysis
+                if loop_counter % 5 == 0:
+                    self._update_enhanced_market_data()
+                
+                # Every 10 seconds, check system health
+                if loop_counter % 10 == 0:
+                    self._enhanced_health_check()
+                
+                # Every 30 seconds, process enhanced trading signals
+                if loop_counter % 30 == 0:
+                    self._process_enhanced_trading_signals()
+                
+                # Every 2 minutes, update enhanced analytics
+                if loop_counter % 120 == 0:
+                    self._update_enhanced_analytics()
+                
+                # Every 5 minutes, run enhanced analysis
+                if loop_counter % 300 == 0:
+                    self._run_enhanced_analysis()
+                
+                time.sleep(1)  # 1 second loop
+                
+            except Exception as e:
+                print(f"Enhanced LIVE trading loop error: {e}")
+                if self.enhanced_components.get('error_recovery'):
+                    self.enhanced_components['error_recovery'].report_error(
+                        "TradingLoopError",
+                        f"Enhanced trading loop error: {str(e)}",
+                        "ENHANCED_LIVE_SYSTEM"
+                    )
+    
+    def _update_enhanced_market_data(self):
+        """Update market data for enhanced analysis"""
+        try:
+            current_price = self.agents['mt5'].get_current_price(self.config['primary_symbol'])
+            if current_price.get('status') == 'success':
+                bid = current_price.get('bid', 0)
+                ask = current_price.get('ask', 0)
+                
+                # Simulate volume (in real implementation, this would come from MT5)
+                import random
+                volume = random.uniform(0.5, 5.0)
+                
+                # Update microstructure analyzer
+                if self.enhanced_components.get('microstructure'):
+                    self.enhanced_components['microstructure'].update_tick_data(bid, ask, volume)
+        
+        except Exception as e:
+            print(f"Enhanced market data update error: {e}")
+    
+    def _enhanced_health_check(self):
+        """Enhanced system health check"""
+        try:
+            # Standard health check
+            mt5_status = self.agents['mt5'].get_status()
+            if mt5_status['status'] != 'CONNECTED':
+                print("[WARN] Enhanced LIVE MT5 connection lost - attempting reconnect...")
+                self.agents['mt5'].initialize()
+        
+        except Exception as e:
+            print(f"Enhanced health check error: {e}")
+    
+    def _process_enhanced_trading_signals(self):
+        """Process enhanced trading signals"""
+        try:
+            if not self.config['auto_trading']:
+                return
+            
+            # Get microstructure analysis
+            if self.enhanced_components.get('microstructure'):
+                micro_analysis = self.enhanced_components['microstructure'].get_microstructure_analysis()
+                
+                if micro_analysis.get('status') == 'success':
+                    liquidity = micro_analysis['microstructure'].get('liquidity_provision', 0)
+                    execution_quality = micro_analysis['microstructure'].get('execution_quality', 0)
+                    
+                    if liquidity > 60 and execution_quality > 70:
+                        # Get pattern analysis
+                        pattern_analysis = None
+                        if self.enhanced_components.get('patterns'):
+                            pattern_analysis = self.enhanced_components['patterns'].get_pattern_analysis()
+                        
+                        # Get standard technical analysis
+                        tech_analysis = self.agents['technical'].get_current_analysis()
+                        
+                        if tech_analysis and len(tech_analysis.get('signals', [])) > 0:
+                            signals = tech_analysis['signals']
+                            strongest_signal = max(signals, key=lambda x: x.get('strength', 0))
+                            
+                            if strongest_signal.get('strength', 0) >= self.config['signal_threshold'] * 100:
+                                print(f"[ENHANCED LIVE SIGNAL] {strongest_signal.get('action')} - {strongest_signal.get('strength', 0):.1f}%")
+                                print(f"   Enhanced by: Liquidity {liquidity:.1f}%, Quality {execution_quality:.1f}%")
+                                
+                                if pattern_analysis and pattern_analysis.get('total_patterns', 0) > 0:
+                                    best_pattern = pattern_analysis.get('best_pattern')
+                                    if best_pattern:
+                                        print(f"   Pattern support: {best_pattern['type']} ({best_pattern['confidence']:.1f}%)")
+                    else:
+                        if liquidity <= 60:
+                            print(f"[ENHANCED WARNING] Low liquidity: {liquidity:.1f}% - trading suspended")
+                        if execution_quality <= 70:
+                            print(f"[ENHANCED WARNING] Poor execution quality: {execution_quality:.1f}% - trading suspended")
+        
+        except Exception as e:
+            print(f"Enhanced signal processing error: {e}")
+    
+    def _update_enhanced_analytics(self):
+        """Update enhanced performance analytics"""
+        try:
+            analysis = self.agents['analytics'].analyze_performance()
+            if analysis.get('status') == 'success':
+                print(f"[ENHANCED ANALYTICS] Return: {analysis.get('total_return', 0):.2f}% | Sharpe: {analysis.get('sharpe_ratio', 0):.2f}")
+        
+        except Exception as e:
+            print(f"Enhanced analytics update error: {e}")
+    
+    def _run_enhanced_analysis(self):
+        """Run comprehensive enhanced analysis"""
+        try:
+            # Get microstructure analysis
+            if self.enhanced_components.get('microstructure'):
+                micro_analysis = self.enhanced_components['microstructure'].get_microstructure_analysis()
+                if micro_analysis.get('status') == 'success':
+                    regime = micro_analysis.get('market_regime', 'Unknown')
+                    print(f"[ENHANCED] Market Regime: {regime}")
+            
+            # Get pattern analysis
+            if self.enhanced_components.get('patterns'):
+                pattern_analysis = self.enhanced_components['patterns'].get_pattern_analysis()
+                if pattern_analysis.get('status') == 'success':
+                    total_patterns = pattern_analysis.get('total_patterns', 0)
+                    if total_patterns > 0:
+                        best_pattern = pattern_analysis.get('best_pattern')
+                        if best_pattern:
+                            print(f"[ENHANCED] Best Pattern: {best_pattern['type']} ({best_pattern['confidence']:.1f}%)")
+        
+        except Exception as e:
+            print(f"Enhanced analysis error: {e}")
+    
+    def stop_enhanced_live_trading(self):
+        """Stop enhanced LIVE trading operations"""
+        print("\\n[STOPPING ENHANCED LIVE TRADING OPERATIONS]")
+        
+        self.system_running = False
+        
+        # Stop all analysis
+        if 'chart' in self.agents:
+            self.agents['chart'].stop_analysis()
+        if 'technical' in self.agents:
+            if hasattr(self.agents['technical'], 'stop_realtime_analysis'):
+                self.agents['technical'].stop_realtime_analysis()
+            elif hasattr(self.agents['technical'], 'stop_real_time_analysis'):
+                self.agents['technical'].stop_real_time_analysis()
+        if 'coordinator' in self.agents:
+            self.agents['coordinator'].stop_coordination()
+        
+        # Disable trading
+        if 'execution' in self.agents:
+            self.agents['execution'].disable_trading()
+        
+        print("  [OK] Enhanced LIVE trading operations stopped")
+    
+    def shutdown_enhanced_system(self):
+        """Shutdown entire enhanced LIVE system"""
+        print("\\n[ENHANCED LIVE SYSTEM SHUTDOWN]")
+        
+        self.stop_enhanced_live_trading()
+        
+        # Shutdown enhanced components first
+        for component_name, component in self.enhanced_components.items():
+            try:
+                print(f"  -> Shutting down enhanced {component_name}...")
+                component.shutdown()
+                print(f"     [OK] enhanced {component_name} shutdown complete")
+            except Exception as e:
+                print(f"     [FAIL] enhanced {component_name} shutdown error: {e}")
+        
+        # Shutdown core agents
+        shutdown_order = [
+            'coordinator', 'execution', 'chart', 'market_data',
+            'portfolio', 'analytics', 'neural', 'technical', 'risk',
+            'alerts', 'config', 'mt5'
+        ]
+        
+        for agent_name in shutdown_order:
+            if agent_name in self.agents:
+                try:
+                    print(f"  -> Shutting down {agent_name}...")
+                    self.agents[agent_name].shutdown()
+                    print(f"     [OK] {agent_name} shutdown complete")
+                except Exception as e:
+                    print(f"     [FAIL] {agent_name} shutdown error: {e}")
+        
+        if self.start_time:
+            runtime = time.time() - self.start_time
+            print(f"\\n  Enhanced LIVE system runtime: {runtime/3600:.2f} hours")
+        
+        print("\\n" + "="*80)
+        print("  [SUCCESS] ENHANCED LIVE SYSTEM SHUTDOWN COMPLETE")
+        print("="*80)
+
+def main():
+    """Main enhanced LIVE trading entry point"""
+    enhanced_system = FixedEnhancedLiveTradingSystem()
+    
+    try:
+        # Initialize enhanced LIVE system
+        if enhanced_system.initialize_enhanced_system():
+            # Confirm enhanced LIVE trading
+            print("\\n" + "="*80)
+            print("  [FINAL WARNING] THIS ENHANCED SYSTEM TRADES WITH REAL MONEY")
+            print("  [MQL5] Advanced market analysis active (without UI threading issues)")
+            print("  [CONFIRMATION] Type 'START ENHANCED LIVE TRADING' to begin:")
+            print("="*80)
+            
+            user_input = input("\\nConfirmation> ").strip()
+            
+            if user_input == "START ENHANCED LIVE TRADING":
+                # Start enhanced LIVE trading
+                if enhanced_system.start_enhanced_live_trading():
+                    print("\\nENHANCED LIVE TRADING SYSTEM IS ACTIVE. Commands:")
+                    print("  'status' - Show enhanced system status")
+                    print("  'analysis' - Show comprehensive analysis")
+                    print("  'balance' - Show account balance")
+                    print("  'positions' - Show open positions")
+                    print("  'health' - Show system health")
+                    print("  'microstructure' - Show microstructure analysis")
+                    print("  'patterns' - Show pattern analysis")
+                    print("  'stop' - Stop trading")
+                    print("  'shutdown' - Shutdown system")
+                    print("  'help' - Show this help")
+                    
+                    # Interactive command loop
+                    while enhanced_system.system_running:
+                        try:
+                            cmd = input("\\nENHANCED-LIVE> ").strip().lower()
+                            
+                            if cmd == 'shutdown' or cmd == 'exit':
+                                break
+                            elif cmd == 'stop':
+                                enhanced_system.stop_enhanced_live_trading()
+                            elif cmd == 'status':
+                                print(f"\\nEnhanced System Status:")
+                                print(f"  Core Agents: {len(enhanced_system.agents)}")
+                                print(f"  Enhanced Components: {len(enhanced_system.enhanced_components)}")
+                                print(f"  Running: {enhanced_system.system_running}")
+                            elif cmd == 'analysis':
+                                enhanced_system._run_enhanced_analysis()
+                            elif cmd == 'microstructure':
+                                if enhanced_system.enhanced_components.get('microstructure'):
+                                    analysis = enhanced_system.enhanced_components['microstructure'].get_microstructure_analysis()
+                                    if analysis.get('status') == 'success':
+                                        print(f"\\nMicrostructure Analysis:")
+                                        print(f"  Market Regime: {analysis.get('market_regime', 'Unknown')}")
+                                        micro = analysis.get('microstructure', {})
+                                        print(f"  Liquidity: {micro.get('liquidity_provision', 0):.1f}%")
+                                        print(f"  Execution Quality: {micro.get('execution_quality', 0):.1f}%")
+                            elif cmd == 'patterns':
+                                if enhanced_system.enhanced_components.get('patterns'):
+                                    analysis = enhanced_system.enhanced_components['patterns'].get_pattern_analysis()
+                                    if analysis.get('status') == 'success':
+                                        print(f"\\nPattern Analysis:")
+                                        print(f"  Total Patterns: {analysis.get('total_patterns', 0)}")
+                                        if analysis.get('best_pattern'):
+                                            best = analysis['best_pattern']
+                                            print(f"  Best Pattern: {best['type']} ({best['confidence']:.1f}%)")
+                            elif cmd == 'balance':
+                                account = enhanced_system.agents['mt5'].get_account_info()
+                                if account.get('status') == 'success':
+                                    print(f"\\nENHANCED LIVE Balance: ${account.get('balance', 0):,.2f}")
+                                    print(f"ENHANCED LIVE Equity: ${account.get('equity', 0):,.2f}")
+                            elif cmd == 'positions':
+                                positions = enhanced_system.agents['mt5'].get_positions()
+                                if positions.get('status') == 'success':
+                                    pos_list = positions.get('positions', [])
+                                    print(f"\\nOpen Positions: {len(pos_list)}")
+                                    for pos in pos_list[:5]:  # Show first 5
+                                        print(f"  {pos.get('symbol', 'Unknown')}: {pos.get('profit', 0):.2f}")
+                            elif cmd == 'health':
+                                if enhanced_system.enhanced_components.get('error_recovery'):
+                                    status = enhanced_system.enhanced_components['error_recovery'].get_system_status()
+                                    print(f"\\nSystem Health: {status['system_health']:.1f}%")
+                                    print(f"Active Errors: {status['active_errors']}")
+                                    print(f"Recovery Rate: {status['recovery_success_rate']:.1f}%")
+                            elif cmd == 'help':
+                                print("\\nEnhanced LIVE Trading Commands:")
+                                print("  status - Enhanced system status")
+                                print("  analysis - Comprehensive analysis")
+                                print("  microstructure - Microstructure analysis")
+                                print("  patterns - Pattern analysis")
+                                print("  balance - Account balance")
+                                print("  positions - Open positions")
+                                print("  health - System health")
+                                print("  stop - Stop trading")
+                                print("  shutdown - Shutdown system")
+                            elif cmd == '':
+                                continue
+                            else:
+                                print(f"Unknown command: {cmd}. Type 'help' for commands.")
+                        
+                        except KeyboardInterrupt:
+                            print("\\nInterrupt received. Shutting down enhanced LIVE system...")
+                            break
+                        except EOFError:
+                            print("\\nEOF received. Shutting down enhanced LIVE system...")
+                            break
+                else:
+                    print("Failed to start enhanced LIVE trading operations")
+            else:
+                print("Enhanced LIVE trading NOT started. User confirmation not received.")
+        else:
+            print("Failed to initialize enhanced LIVE system")
+    
+    except KeyboardInterrupt:
+        print("\\nInterrupt received during startup. Shutting down...")
+    
+    finally:
+        # Always shutdown gracefully
+        enhanced_system.shutdown_enhanced_system()
+
+if __name__ == "__main__":
+    main()

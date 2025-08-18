@@ -1,0 +1,33 @@
+# Technical Indicator Settings
+moving_averages:
+  sma:
+    periods: [20, 50, 200]
+  ema:
+    periods: [12, 26]
+  
+oscillators:
+  rsi:
+    period: 14
+    overbought: 70
+    oversold: 30
+  macd:
+    fast: 12
+    slow: 26
+    signal: 9
+  stochastic:
+    k_period: 14
+    d_period: 3
+    
+trend_indicators:
+  atr:
+    period: 14
+  adx:
+    period: 14
+  bollinger_bands:
+    period: 20
+    std_dev: 2
+    
+volume_indicators:
+  obv: true
+  volume_sma:
+    period: 20

@@ -1,0 +1,28 @@
+# MT5 Windows Configuration
+mt5_connection:
+  auto_connect: true
+  retry_attempts: 5
+  retry_delay: 10
+  timeout: 30
+  
+broker_settings:
+  name: "YourBroker"  # Update with your actual broker
+  server: "auto"
+  login: null  # Set in .env file - REQUIRED for live trading
+  password: null  # Set in .env file - REQUIRED for live trading
+  path: null  # MT5 installation path if custom
+  
+connection_monitoring:
+  health_check_interval: 60
+  reconnect_on_failure: true
+  max_reconnection_attempts: 10
+  
+account_settings:
+  demo_mode: false
+  live_trading: true
+  real_account: true
+  production_mode: true
+  
+logging:
+  level: "INFO"
+  file: "logs/mt5_connection.log"

@@ -1,0 +1,177 @@
+# AGI Trading System - Git Ignore File
+
+# Environment and secrets
+.env
+*.env
+.env.local
+.env.production
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+env/
+ENV/
+agi_env/
+trading_env/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files  
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# Log files
+*.log
+logs/*.log
+logs/system.log
+logs/trading.log
+logs/errors.log
+logs/performance.log
+
+# Database files
+database/*.db
+database/*.sqlite
+database/*.sqlite3
+*.db
+*.sqlite
+
+# Model files (large ML models)
+models/neural_models/*.h5
+models/neural_models/*.pkl
+models/pattern_models/*.joblib
+models/saved_models/*.pt
+*.h5
+*.pkl
+*.joblib
+
+# Trading data
+data/historical/*.csv
+data/tick_data/
+data/backtest_results/
+historical_data/
+tick_data/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+.cache/
+
+# Jupyter notebooks
+.ipynb_checkpoints/
+*.ipynb
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+coverage.xml
+
+# Documentation builds
+docs/_build/
+site/
+
+# Package files
+*.tar.gz
+*.zip
+*.rar
+
+# MT5 specific
+MT5/
+MetaTrader5/
+terminal_data/
+*.ex5
+*.mq5
+
+# Backup files
+*.bak
+*.backup
+backup/
+backups/
+
+# Configuration overrides
+config_local.yaml
+local_settings.py
+user_config.yaml
+
+# Performance and profiling
+*.prof
+profile_results/
+
+# Large data files
+*.csv
+data/*.csv
+price_data/
+market_data/
+
+# Credentials and sensitive files
+credentials.json
+api_keys.txt
+broker_config.json
+secret_keys/
+
+# System specific
+*.pid
+*.sock
+*.lock
+
+
+# Claude Flow generated files
+.claude/settings.local.json
+.mcp.json
+claude-flow.config.json
+.swarm/
+.hive-mind/
+memory/claude-flow-data.json
+memory/sessions/*
+!memory/sessions/README.md
+memory/agents/*
+!memory/agents/README.md
+coordination/memory_bank/*
+coordination/subtasks/*
+coordination/orchestration/*
+*.db
+*.db-journal
+*.db-wal
+*.sqlite
+*.sqlite-journal
+*.sqlite-wal
+claude-flow
+claude-flow.bat
+claude-flow.ps1
+hive-mind-prompt-*.txt

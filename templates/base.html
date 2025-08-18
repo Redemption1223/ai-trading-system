@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}AGI Trading System{% endblock %}</title>
+    
+    <!-- CSS Stylesheets -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/professional_theme.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/charts.css') }}">
+    
+    <!-- External Libraries -->
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <!-- Header -->
+    <header class="dashboard-header">
+        <div class="system-info">
+            <h1>🚀 AGI Trading System</h1>
+            <div class="system-status">
+                <span id="connection-status" class="status-indicator status-offline"></span>
+                <span id="status-text">OFFLINE</span>
+            </div>
+        </div>
+        
+        <div class="header-controls">
+            <div class="metric-card">
+                <div class="metric-value" id="signal-count">0</div>
+                <div class="metric-label">Signals Today</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value" id="accuracy-metric">0%</div>
+                <div class="metric-label">Accuracy</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value" id="profit-metric">$0.00</div>
+                <div class="metric-label">P&L Today</div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="dashboard-footer">
+        <div class="footer-info">
+            <span>AGI Trading System v0.1.0</span>
+            <span>|</span>
+            <span>Phase 1: Template Foundation</span>
+            <span>|</span>
+            <span id="current-time"></span>
+        </div>
+    </footer>
+
+    <!-- Base JavaScript -->
+    <script>
+        // Update current time
+        function updateTime() {
+            document.getElementById('current-time').textContent = new Date().toLocaleString();
+        }
+        setInterval(updateTime, 1000);
+        updateTime();
+    </script>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - AGI Trading System{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Left Panel - Signals -->
+    <div class="panel signals-panel">
+        <div class="panel-header">
+            🎯 Trading Signals
+            <div class="panel-controls">
+                <label>
+                    <input type="checkbox" id="alerts-enabled" checked> Alerts
+                </label>
+            </div>
+        </div>
+        <div id="signal-list" class="signal-list">
+            <!-- Signals will be populated here -->
+            <div class="signal-item signal-neutral">
+                <div class="signal-header">
+                    <strong>SYSTEM</strong>
+                    <span class="signal-time">Starting...</span>
+                </div>
+                <div class="signal-details">
+                    <div>Status: Initializing AGI agents</div>
+                    <div>Phase: Template Foundation</div>
+                    <div>Ready: Awaiting implementation</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Center Panel - Charts -->
+    <div class="panel chart-panel">
+        <div class="panel-header">
+            📈 Market Analysis
+            <div class="chart-controls">
+                <select id="symbol-selector" class="symbol-selector">
+                    <option value="EURUSD">EUR/USD</option>
+                    <option value="GBPUSD">GBP/USD</option>
+                    <option value="USDJPY">USD/JPY</option>
+                    <option value="AUDUSD">AUD/USD</option>
+                </select>
+                
+                <div class="timeframe-buttons">
+                    <button class="timeframe-btn" data-timeframe="M15">M15</button>
+                    <button class="timeframe-btn active" data-timeframe="H1">H1</button>
+                    <button class="timeframe-btn" data-timeframe="H4">H4</button>
+                    <button class="timeframe-btn" data-timeframe="D1">D1</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="price-display">
+            <div class="price-value" id="price-value">0.00000</div>
+            <div class="price-change" id="price-change">+0.00000 (0.00%)</div>
+        </div>
+        
+        <div id="chart-container" class="chart-container">
+            <div class="chart-placeholder">
+                <h3>📊 Chart Visualization</h3>
+                <p>Charts will be implemented in Phase 2</p>
+                <p>Current Status: Template Ready</p>
+            </div>
+        </div>
+        
+        <div class="chart-indicators">
+            <div>RSI: --</div>
+            <div>MACD: --</div>
+            <div>SMA(20): --</div>
+        </div>
+    </div>
+
+    <!-- Right Panel - System Monitor -->
+    <div class="panel monitor-panel">
+        <div class="panel-header">
+            🔧 System Monitor
+        </div>
+        
+        <div class="monitor-section">
+            <h4>🤖 Agent Status</h4>
+            <div id="agent-status-list">
+                <div class="agent-status-item">
+                    <div class="agent-info">
+                        <span class="status-indicator status-warning"></span>
+                        <span class="agent-name">MT5 Connector</span>
+                    </div>
+                    <div class="agent-metrics">
+                        <small>Status: Template</small>
+                    </div>
+                </div>
+                <div class="agent-status-item">
+                    <div class="agent-info">
+                        <span class="status-indicator status-warning"></span>
+                        <span class="agent-name">Neural Brain</span>
+                    </div>
+                    <div class="agent-metrics">
+                        <small>Status: Template</small>
+                    </div>
+                </div>
+                <div class="agent-status-item">
+                    <div class="agent-info">
+                        <span class="status-indicator status-warning"></span>
+                        <span class="agent-name">Signal Coordinator</span>
+                    </div>
+                    <div class="agent-metrics">
+                        <small>Status: Template</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="monitor-section">
+            <h4>📊 Performance</h4>
+            <div class="performance-metrics">
+                <div class="metric-row">
+                    <span>CPU Usage:</span>
+                    <span id="cpu-usage">0%</span>
+                </div>
+                <div class="metric-row">
+                    <span>Memory:</span>
+                    <span id="memory-usage">0 MB</span>
+                </div>
+                <div class="metric-row">
+                    <span>Active Agents:</span>
+                    <span id="active-agents">0</span>
+                </div>
+                <div class="metric-row">
+                    <span>Uptime:</span>
+                    <span id="system-uptime">00:00:00</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="monitor-section">
+            <h4>⚠️ System Alerts</h4>
+            <div id="system-alerts">
+                <div class="alert-item alert-info">
+                    <strong>PHASE 1 COMPLETE</strong><br>
+                    All templates created successfully.<br>
+                    Ready for implementation phase.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+<script src="{{ url_for('static', filename='js/realtime_signals.js') }}"></script>
+<script src="{{ url_for('static', filename='js/chart_controls.js') }}"></script>
+{% endblock %}

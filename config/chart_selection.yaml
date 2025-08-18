@@ -1,0 +1,25 @@
+# Chart Selection Configuration
+default_symbols:
+  - "EURUSD"
+  - "GBPUSD"
+  - "USDJPY"
+  - "AUDUSD"
+  - "USDCAD"
+  - "USDCHF"
+  - "NZDUSD"
+
+timeframes:
+  primary: "H1"
+  secondary: ["M15", "H4", "D1"]
+  
+chart_settings:
+  max_bars: 10000
+  update_frequency: 1  # seconds
+  auto_scroll: true
+  show_indicators: true
+  
+display_preferences:
+  theme: "dark"
+  grid: true
+  volume: true
+  crosshair: true

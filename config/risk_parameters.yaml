@@ -1,0 +1,26 @@
+# Risk Management Parameters
+risk_settings:
+  max_risk_per_trade: 0.02  # 2% of account
+  max_daily_loss: 0.05      # 5% of account
+  max_open_positions: 5
+  
+position_sizing:
+  method: "fixed_fractional"
+  base_size: 0.01
+  max_size: 1.0
+  min_size: 0.01
+  
+stop_loss:
+  method: "atr"
+  atr_multiplier: 2.0
+  max_sl_pips: 100
+  min_sl_pips: 10
+  
+take_profit:
+  method: "risk_reward"
+  risk_reward_ratio: 2.0
+  max_tp_pips: 200
+  
+correlation_limits:
+  max_correlation: 0.7
+  correlation_pairs: []

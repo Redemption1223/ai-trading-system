@@ -1,0 +1,279 @@
+# Adaptive Coordination System Configuration
+# Dynamic optimization and intelligent coordination parameters
+
+# Core adaptation settings
+adaptation:
+  enabled: true
+  adaptation_threshold: 0.15        # 15% improvement needed for topology switch
+  performance_evaluation_window: 300 # 5 minutes performance window
+  market_analysis_interval: 60      # 1 minute market analysis
+  rebalance_interval: 180           # 3 minutes load rebalancing
+  pattern_min_samples: 10           # Minimum samples for pattern recognition
+  emergency_threshold: 0.5          # 50% failure rate triggers emergency mode
+  max_adaptations_per_hour: 6       # Limit adaptation frequency
+
+# Market condition thresholds
+market_conditions:
+  volatility:
+    low: 0.01       # Below 1% volatility = stable
+    medium: 0.02    # 1-2% volatility = normal
+    high: 0.03      # Above 3% volatility = volatile
+    crisis: 0.05    # Above 5% volatility = crisis
+  
+  volume:
+    low: 0.3        # Below 30% average volume = low
+    normal: 0.7     # 30-70% average volume = normal
+    high: 1.2       # Above 120% average volume = high
+  
+  trend_strength:
+    weak: 0.3       # Below 30% = ranging
+    moderate: 0.6   # 30-60% = weak trend
+    strong: 0.8     # Above 80% = strong trend
+
+# Topology optimization rules
+topology_rules:
+  hierarchical:
+    best_for:
+      - complex_coordination
+      - low_performance_recovery
+      - centralized_control
+    conditions:
+      - performance < 0.6
+      - coordination_complexity > 0.7
+      - agent_failures < 0.2
+    
+  mesh:
+    best_for:
+      - high_load_distribution
+      - fault_tolerance
+      - volatile_markets
+    conditions:
+      - system_load > 0.8
+      - volatility > 0.03
+      - agent_failures > 0.2
+    
+  ring:
+    best_for:
+      - sequential_processing
+      - trending_markets
+      - efficiency_optimization
+    conditions:
+      - trend_strength > 0.7
+      - performance > 0.8
+      - volatility < 0.02
+    
+  hybrid:
+    best_for:
+      - mixed_workloads
+      - transitional_periods
+      - balanced_optimization
+    conditions:
+      - mixed_conditions: true
+      - optimization_goals > 2
+    
+  emergency:
+    best_for:
+      - crisis_management
+      - system_recovery
+      - risk_minimization
+    conditions:
+      - agent_failures > 0.5
+      - performance < 0.3
+      - volatility > 0.05
+
+# Agent performance thresholds
+agent_performance:
+  optimal:
+    success_rate: 0.9
+    response_time: 1.0
+    error_rate: 0.01
+    signal_quality: 0.85
+    
+  good:
+    success_rate: 0.8
+    response_time: 2.0
+    error_rate: 0.05
+    signal_quality: 0.7
+    
+  degraded:
+    success_rate: 0.6
+    response_time: 5.0
+    error_rate: 0.15
+    signal_quality: 0.5
+    
+  overloaded:
+    success_rate: 0.3
+    response_time: 10.0
+    error_rate: 0.3
+    signal_quality: 0.3
+    
+  failed:
+    success_rate: 0.1
+    response_time: 30.0
+    error_rate: 0.5
+    signal_quality: 0.1
+
+# Load balancing settings
+load_balancing:
+  enabled: true
+  rebalance_threshold: 0.4          # 40% load difference triggers rebalance
+  max_load_per_agent: 0.9           # 90% maximum load per agent
+  min_load_per_agent: 0.1           # 10% minimum load per agent
+  load_transfer_amount: 0.2         # 20% load transfer per rebalance
+  emergency_transfer_threshold: 0.8  # 80% load triggers emergency transfer
+  
+  agent_priorities:
+    critical: ["RISK_CALCULATOR", "SIGNAL_COORDINATOR", "MT5_CONNECTOR"]
+    important: ["NEURAL_SIGNAL_BRAIN", "TECHNICAL_ANALYST"]
+    standard: ["CHART_SIGNAL_AGENT", "NEWS_SENTIMENT_READER"]
+    background: ["PROFESSIONAL_DASHBOARD", "SYSTEM_MONITOR"]
+
+# Risk management adaptation
+risk_adaptation:
+  enabled: true
+  base_risk_per_trade: 0.02         # 2% base risk
+  volatility_adjustment: true
+  
+  volatility_multipliers:
+    low: 1.2        # Increase risk 20% in low volatility
+    normal: 1.0     # Normal risk in normal volatility
+    high: 0.7       # Reduce risk 30% in high volatility
+    crisis: 0.3     # Reduce risk 70% in crisis
+    
+  emergency_limits:
+    max_risk_per_trade: 0.005       # 0.5% in emergency
+    max_open_positions: 1           # Only 1 position in emergency
+    force_stop_loss: true           # Force stop losses
+    
+  performance_adjustments:
+    high_performance: 1.1           # 10% risk increase if performing well
+    low_performance: 0.8            # 20% risk reduction if performing poorly
+
+# Learning and pattern recognition
+learning:
+  enabled: true
+  pattern_recognition: true
+  success_threshold: 0.15           # 15% improvement = successful pattern
+  pattern_retention_days: 7         # Keep patterns for 7 days
+  max_patterns: 100                 # Maximum patterns to store
+  
+  learning_weights:
+    performance: 0.4                # 40% weight on performance
+    market_fit: 0.3                 # 30% weight on market fitness
+    stability: 0.2                  # 20% weight on stability
+    efficiency: 0.1                 # 10% weight on efficiency
+    
+  adaptation_rules:
+    update_frequency: 3600          # Update rules every hour
+    confidence_threshold: 0.8       # 80% confidence needed for rule update
+    rule_retention_days: 30         # Keep rules for 30 days
+
+# Performance monitoring
+monitoring:
+  enabled: true
+  performance_history_size: 1000    # Keep 1000 performance records
+  market_history_size: 500          # Keep 500 market records
+  coordination_history_size: 200    # Keep 200 coordination records
+  
+  alerts:
+    performance_degradation: 0.3    # Alert if performance < 30%
+    high_load: 0.85                 # Alert if load > 85%
+    agent_failure: true             # Alert on agent failures
+    emergency_mode: true            # Alert on emergency activation
+    
+  metrics_export:
+    enabled: true
+    export_interval: 300            # Export metrics every 5 minutes
+    format: "json"
+    include_patterns: true
+
+# Communication optimization
+communication:
+  enabled: true
+  optimize_routing: true
+  minimize_latency: true
+  
+  topology_specific:
+    hierarchical:
+      max_hops: 2
+      coordinator_timeout: 5
+      broadcast_optimization: true
+      
+    mesh:
+      direct_connections: true
+      redundant_paths: 2
+      flood_control: true
+      
+    ring:
+      ordered_processing: true
+      pipeline_optimization: true
+      token_passing: true
+      
+    emergency:
+      critical_only: true
+      max_agents: 3
+      fast_failover: true
+
+# Self-organization features
+self_organization:
+  enabled: true
+  automatic_role_assignment: true
+  dynamic_priority_adjustment: true
+  emergent_behavior_detection: true
+  
+  role_assignment:
+    capability_based: true
+    performance_based: true
+    load_based: true
+    
+  priority_adjustment:
+    success_bonus: 0.1              # 10% priority boost for success
+    failure_penalty: 0.2            # 20% priority reduction for failure
+    load_factor: 0.15               # 15% priority adjustment for load
+    
+  emergence_detection:
+    pattern_threshold: 3            # 3 occurrences = pattern
+    behavior_window: 1800           # 30 minutes behavior window
+    adaptation_delay: 300           # 5 minutes before adapting to emergence
+
+# Emergency protocols
+emergency:
+  activation_triggers:
+    agent_failure_rate: 0.5         # 50% agent failure rate
+    performance_threshold: 0.3      # 30% performance threshold
+    market_volatility: 0.05         # 5% volatility threshold
+    system_errors: 10               # 10 system errors per minute
+    
+  response_actions:
+    topology_switch: "emergency"
+    risk_reduction: 0.8             # 80% risk reduction
+    agent_prioritization: true
+    communication_simplification: true
+    
+  recovery_conditions:
+    agent_recovery_rate: 0.8        # 80% agents must recover
+    performance_threshold: 0.6      # 60% performance for recovery
+    stability_period: 600           # 10 minutes stable before exit
+    
+  failsafe_modes:
+    complete_shutdown: false        # Don't shutdown completely
+    manual_override: true           # Allow manual override
+    safe_mode_trading: true         # Enable safe trading mode
+
+# Integration settings
+integration:
+  mt5_connector: true
+  signal_coordinator: true
+  risk_calculator: true
+  neural_brain: true
+  
+  coordination_interfaces:
+    rest_api: true
+    websocket: true
+    event_driven: true
+    
+  data_sharing:
+    performance_metrics: true
+    market_data: true
+    coordination_state: true
+    learning_patterns: true

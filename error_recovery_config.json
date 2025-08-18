@@ -1,0 +1,23 @@
+{
+  "system_config": {
+    "max_error_history": 1000,
+    "auto_restart": true,
+    "max_retries": 5,
+    "emergency_stop": false,
+    "max_daily_loss": 500.0,
+    "error_count_threshold": 10,
+    "critical_error_threshold": 3
+  },
+  "alert_config": {
+    "email_alerts": false,
+    "push_notifications": false,
+    "telegram_bot": false,
+    "webhook_url": "",
+    "email_address": "",
+    "telegram_chat_id": "",
+    "smtp_server": "",
+    "smtp_port": 587,
+    "smtp_username": "",
+    "smtp_password": ""
+  }
+}
